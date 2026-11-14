@@ -47,9 +47,12 @@ export function createMarsCamera(container, viewer) {
         if (introAmount === 0) removeFraming();
     });
 
+    const interactiveListeners = [];
+
     function enterInteractiveMode() {
         if (!cinematicMode) return interactiveReady;
         cinematicMode = false;
+        interactiveListeners.forEach(listener => listener());
         transitionStart = performance.now();
         container.style.pointerEvents = 'auto';
         viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
@@ -82,5 +85,10 @@ export function createMarsCamera(container, viewer) {
             enterInteractiveMode();
         }
     }, { passive: false });
-    return { enterInteractiveMode };
+    // Stage 1 (showcase) -> stage 2 (exploration) hook for UI such as pins.
+    function onEnterInteractive(listener) {
+        if (cinematicMode) interactiveListeners.push(listener);
+        else listener();
+    }
+    return { enterInteractiveMode, onEnterInteractive };
 }

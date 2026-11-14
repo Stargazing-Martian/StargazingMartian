@@ -95,3 +95,60 @@ body {
 #terrain-panel code { overflow-wrap: anywhere; }
 .elevation-ramp { height: 9px; background: linear-gradient(to right,#172b70,#398db0 20%,#83b5a2 35%,#d4c17d 50%,#b97444 70%,#974839 85%,#fff0dc); }
 .elevation-labels { display: flex; justify-content: space-between; gap: .3rem; font-size: 10px; margin-top: .3rem; }
+
+/* Mission pins: HTML overlay above the globe, Google Maps style */
+.pin-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .45s ease, visibility 0s linear .45s;
+}
+.pin-layer.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .45s ease, visibility 0s;
+}
+/* Zero-size anchor at the surface point; children hang off it. */
+.mission-pin {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    will-change: transform;
+}
+.mission-pin[hidden] { display: none; }
+.mission-pin__icon {
+    position: absolute;
+    left: -14px;
+    bottom: 0;
+    width: 28px;
+    height: 36px;
+    overflow: visible;
+    filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / .45));
+}
+.mission-pin__icon path {
+    fill: #1a73e8;
+    stroke: #fff;
+    stroke-width: 1.5;
+}
+.mission-pin__icon circle { fill: #fff; }
+.mission-pin__label {
+    position: absolute;
+    right: 17px;
+    bottom: 14px;
+    white-space: nowrap;
+    font: 600 14px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: .01em;
+    color: #1558d6;
+    /* White halo keeps the text readable on any part of Mars. */
+    text-shadow:
+        -1.5px -1.5px 0 #fff, 0 -1.5px 0 #fff, 1.5px -1.5px 0 #fff,
+        -1.5px 0 0 #fff, 1.5px 0 0 #fff,
+        -1.5px 1.5px 0 #fff, 0 1.5px 0 #fff, 1.5px 1.5px 0 #fff,
+        0 0 4px #fff;
+}

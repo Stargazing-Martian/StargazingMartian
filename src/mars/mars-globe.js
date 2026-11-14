@@ -2,8 +2,11 @@ import { createVikingImagery } from '../nasa/nasa-layers.js';
 import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, saveTerrainUrl, terrainTimeoutMs } from './config.js?v=5';
 import { createTerrainControls } from '../ui/terrain-controls.js?v=6';
 import { monitorTerrain } from './terrain-monitor.js';
-import { createMarsCamera } from './mars-camera.js?v=5';
+import { createMarsCamera } from './mars-camera.js?v=6';
+import { createMarsAtmosphere } from './mars-atmosphere.js';
 import { createMarsSkybox } from './mars-skybox.js';
+import { MISSIONS } from '../missions/mission-data.js?v=6';
+import { createMissionPins } from '../missions/mission-pins.js?v=8';
 
 (async () => {
     const container = document.getElementById("mars-globe");
@@ -48,7 +51,13 @@ import { createMarsSkybox } from './mars-skybox.js';
         intensity: 1.5
     });
 
-    const { enterInteractiveMode } = createMarsCamera(container, viewer);
+    createMarsAtmosphere(viewer, ellipsoid);
+
+    const { enterInteractiveMode, onEnterInteractive } = createMarsCamera(container, viewer);
+
+    // Pins never show in the showcase; in exploration they need a zoom-in first.
+    const pins = createMissionPins(viewer, ellipsoid, MISSIONS);
+    onEnterInteractive(() => pins.enable());
 
     const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));
     const controls = createTerrainControls(viewer, imagery, enterInteractiveMode, ellipsoid);
