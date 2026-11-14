@@ -296,7 +296,7 @@ reads the native spherical equirectangular DEM without attempting Earth/Mars CRS
 conversion. Earth datasets continue to use the existing pipeline.
 
 Supported Mars input: one north-up band, global coverage, equatorial spherical
-equirectangular projection with radius **3396190 m**, zero offsets/origin, and
+equirectangular or geographic CRS with radius **3396190 m**, zero offsets/origin, and
 longitude coverage 0–360 or -180–180. Other projections fail validation instead
 of producing misplaced terrain. Source heights must be in metres with scale=1
 and offset=0. The current COG does not declare its vertical datum or band unit;
@@ -304,18 +304,29 @@ its numeric DEM elevations are preserved. No areoid-to-ellipsoid correction has
 been applied, so this is a relief visualization, not a validated absolute-radius
 scientific product.
 
-The Mars path supports `grid` and nearest sampling. Source overviews are selected
-consistently per zoom. Shared tile boundaries sample the same positions, including
-0/360 and ±180; polar vertices share one height. Normals use central differences
-across tile boundaries. Grid subdivisions are clamped to 16–128 for curvature and
-bounded tile size. Unlike the Earth path, zoom 0 includes source relief.
+The replacement Mars path uses `mars_raster.py` for block reads and global
+pixel interpolation, `mars_mesh.py` for meshes/normals, and `mars.py` for
+request scheduling and caching. It supports `grid` with nearest or bilinear
+sampling. The bundled dataset uses bilinear and 128×128 cells at every level
+(16,641 vertices). Configured cell counts must be 64–128. Source overviews
+are selected consistently per level. A single halo supplies both elevations
+and central-difference normals; shared edges and pole heights are consistent.
+Zoom zero includes source relief.
 
-Mars uses up to four workers with reusable, worker-specific raster readers and a
-128-tile memory cache per dataset. Cache entries distinguish the normals variant;
-other options are fixed for that dataset instance. `skipCache: true` disables both
-reads and writes to this Mars cache. The Earth disk/SQLite cache is not used for
-Mars. Changing the source file requires a restart and is detected before serving
-cached tiles. Failures return 503, timeouts 504, invalid coordinates 404.
+The service uses four workers and shares in-flight generation for identical
+requests. Client timeouts do not cancel shared work. The raster block cache is
+bounded to 128 MiB and the tile memory cache to 128 entries. Compressed tiles
+are atomically persisted under `CTOD_TILE_CACHE_PATH/mars/<version>`. Source
+identity, grid and sampling options define the version. `skipCache` bypasses
+the memory/disk tile caches. Missing raster samples use valid coarser overviews at the same coordinates;
+unfilled samples fail explicitly rather than becoming -32768 metre spikes. Invalid coordinates return 404, generation errors
+503 and generation timeouts 504.
+
+`CTOD_MARS_DEM` can select an existing local Mars DEM before the configured
+remote source. Compose mounts the folder from `STARGAZING_DEM_DIR` (default
+`./ctod/data`) at `/data` and looks for `MarsHRSCMOLA_MAP2_COG.tif`. Startup logs
+report the selected source and its pixel size. The remote USGS fallback needs
+network access; the local DEM does not. See [rebuild notes](REBUILD_NOTES.md).
 
 Run CTOD on a port of your choice with `--port` / `CTOD_PORT`; Stargazing does
 not require a particular port. Enter the terrain URL in Stargazing's connection

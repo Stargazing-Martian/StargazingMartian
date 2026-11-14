@@ -1,0 +1,14 @@
+{
+  "name": "Stargazing Martian + CTOD",
+  "dockerComposeFile": "../compose.yaml",
+  "service": "ctod",
+  "runServices": ["ctod", "web"],
+  "workspaceFolder": "/workspaces/StargazingMartian",
+  "overrideCommand": false,
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [5000, 5500],
+  "portsAttributes": {
+    "5000": { "label": "CTOD terrain API", "onAutoForward": "silent" },
+    "5500": { "label": "Stargazing Martian", "onAutoForward": "openPreview" }
+  }
+}

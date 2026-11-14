@@ -57,14 +57,14 @@ export function createMarsAtmosphere(viewer, ellipsoid) {
 
     const inner = createAtmosphereLayer(
         viewer,
-        radius + 10000,
+        radius + 35000,
         0.15
     );
 
 
     const outer = createAtmosphereLayer(
         viewer,
-        radius + 35000,
+        radius + 75000,
         0.05
     );
 

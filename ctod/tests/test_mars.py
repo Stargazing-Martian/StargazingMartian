@@ -99,7 +99,7 @@ class MarsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.terrain.tile(*tile)
         with rasterio.open(self.path) as src:
-            with patch('ctod.core.terrain.mars.CRS', return_value=__import__('pyproj').CRS('EPSG:4326')):
+            with patch('ctod.core.terrain.mars_raster.CRS', return_value=__import__('pyproj').CRS('EPSG:4326')):
                 with self.assertRaises(ValueError):
                     self.terrain._validate(src)
 

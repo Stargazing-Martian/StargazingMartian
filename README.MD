@@ -25,13 +25,50 @@ adresi** alanına çalışan servisin `/tiles/mars` adresini girin ve **Bağlan*
 basın. Sunucu kök adresi veya `layer.json` adresi de kabul edilir. Başarılı adres
 bu tarayıcı ve origin için hatırlanır. Port/origin değiştiğinde yeniden girilebilir.
 
+## Hızlı başlatma (Docker)
+
+Docker kuruluysa Stargazing ve CTOD'yi tek komutla başlatın:
+
+```sh
+docker compose up -d --build
+```
+
+Sonraki açılışlarda yeniden derlemeyin:
+
+```sh
+docker compose up -d
+```
+
+Durdurmak için `docker compose down` kullanın; önbellek volume'u korunur.
+
+Ardından <http://localhost:5500> adresini açın. Arazi bağlantısı, CTOD adresini
+yerel kurulumda otomatik seçer. İlk açılış Docker imajlarını ve Python
+bağımlılıklarını indirir. Mars DEM'i Git deposuna eklenmez. Yerel kaynak yoksa CTOD, resmi USGS HRSC/MOLA
+200 m GeoTIFF'ini HTTP aralık istekleriyle bloklar halinde okur; dosyanın tamamını
+indirmez. Uzaktan kaynak ilk tile'larda ağ gecikmesine tabidir.
+
+Yerel DEM için `.env.example` dosyasını `.env` olarak kopyalayıp
+`STARGAZING_DEM_DIR` değerini `MarsHRSCMOLA_MAP2_COG.tif` dosyanızın bulunduğu
+klasöre ayarlayın. Alternatif olarak COG'u `ctod/data/` klasörüne koyun.
+Compose bu klasörü salt okunur `/data` olarak bağlar; CTOD yerel dosyayı
+bulursa USGS ağına ihtiyaç duymadan onu kullanır. Başlangıç logu seçilen kaynağı
+yazar. `.env` ve rasterlar Git'e dahil edilmez.
+
+VS Code'da **Dev Containers** eklentisiyle depoyu açıp **Reopen in Container**
+seçin. GitHub Codespaces'te **Code → Codespaces → Create codespace** ile aynı
+ortamı başlatabilirsiniz; port 5500 önizlemeyi açar.
+
+DEM kaynağı: [USGS Astrogeology](https://astrogeology.usgs.gov/search/map/Mars/Topography/HRSC_MOLA_Blend/Mars_HRSC_MOLA_BlendDEM_Global_200mp_v2).
+HRSC verisi CC BY-SA 3.0 IGO koşullarına tabidir; akademik kullanımda kaynak
+yazarlarını belirtin.
+
 İstenirse `index.html` içindeki module script'ten önce merkezi ayar verilebilir:
 
 ```html
 <script>
   globalThis.STARGAZING_CONFIG = {
     terrainUrl: "https://terrain.example.com/tiles/mars",
-    terrainTimeoutMs: 15000
+    terrainTimeoutMs: 120000
   };
 </script>
 ```
@@ -59,7 +96,10 @@ uygulama açıkça yalnızca yüzey görüntüsü gösterdiğini belirtir. Tek t
 önceden yüklenmiş bütün araziyi kapatmaz. Bağlantı panelinden yeniden denenebilir.
 
 - **Olympus Mons’a yaklaş:** eğik yakın görünümle yamaç ve krateri inceleyin.
-- **Topografya renkleri:** doku yerine DEM yüksekliklerini renklerle gösterir.
+- **Topografya renkleri:** doku yerine DEM yüksekliklerini renklerle gösterir;
+  varsayılan açıktır ve düşey ölçek 5× olarak açıkça etiketlenir.
+- **Yüzeye tıklama:** en ayrıntılı terrain seviyesinden kaynak yüksekliğini metre
+  ve koordinatla gösterir; bu değer düşey abartıdan etkilenmez.
 - **1×:** kaynak yüksekliklerinin gerçek ölçeği; **5×/10×:** açıkça etiketlenmiş
   görsel abartı. Renk lejandı abartıdan bağımsız kaynak yüksekliklerini gösterir.
 
@@ -67,17 +107,25 @@ Gezegenin tamamına uzaktan bakarken gerçek ölçekte kabartı çok küçük g�
 yakın görünüm veya abartılı ölçek kullanın. Globe, terrain ve WMTS aynı
 3396190 m Mars küresini kullanır. Kaynak raster değerleri korunur; düşey datum
 ve birim metadata'sı açık olmadığından mutlak Mars yarıçapı doğruluğu iddia edilmez.
-Areoid düzeltmesi uygulanmamıştır. Mevcut terrain üst seviyesi 8, görüntü seviyesi
+Areoid düzeltmesi uygulanmamıştır. Mevcut terrain üst seviyesi 9, görüntü seviyesi
 7'dir; yakınlaştırmak kaynak çözünürlüğünün ötesinde yeni ayrıntı üretmez.
 
-## Doğrulama
+## Mars arazi üretimi (v3)
 
-15 CTOD regresyon testi geçti: CORS farklı loopback host/portları ve preflight,
-örnekleme, kenar/kutup sürekliliği, cache, hata/timeout ve mesh başlık ölçeği.
-Tarayıcıda metadata yanında gerçek terrain çözümleme, Olympus Mons yakın görünümü,
-yükseklik renkleri ve düşey ölçek kontrol edildi. Ana belge `<!DOCTYPE html>` ile
-Standards Mode kullanır. Konsoldaki `blank`/extension mesajları ve Cesium WASM
-source-map uyarısı CORS ile aynı problem değildir.
+Mars yolu yeniden düzenlendi: blok tabanlı raster okuma, bilinear örnekleme,
+her seviyede varsayılan 128×128 hücre (16.641 köşe), tek halo üzerinden normal
+hesabı, dört üretim işçisi ve aynı tile için paylaşılan tek üretim işi.
+Kaynak ve ayarlar sürümlü cache kimliğine dahildir. Tile'lar Docker cache
+volume'unda saklanır; yeniden başlatma önbelleği silmez.
+
+Eksik DEM hücreleri aynı kaynağın geçerli overview seviyesinden tamamlanır;
+hiçbir seviyede veri yoksa tile hatası açıkça bildirilir. Derin çukurlar üretilmez.
+Arayüz başarısız tile koordinatını gösterir ve aynı tile başarıyla gelince
+uyarıyı kaldırır. Yüzey görüntüsü hâlâ Viking mozaiğidir; CTOD değişikliği
+fotoğrafın doğal çözünürlüğünü artırmaz.
+
+Ölçümler ve henüz tamamlanmamış kontroller:
+[CTOD yeniden yapılandırma notları](ctod/REBUILD_NOTES.md).
 
 API kaynakları:
 - https://cesium.com/learn/cesiumjs/ref-doc/CesiumTerrainProvider.html

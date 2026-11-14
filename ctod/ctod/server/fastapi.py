@@ -47,12 +47,14 @@ async def lifespan(app: FastAPI):
 
 async def setup_globals(settings: Settings):
     dataset_config = DatasetConfig(settings.dataset_config_path)
+    if settings.tile_cache_path:
+        os.makedirs(settings.tile_cache_path, exist_ok=True)
     terrain_factory = TerrainFactory(
         settings.tile_cache_path, settings.db_name, settings.factory_cache_ttl)
     await terrain_factory.cache.initialize()
 
     globals["mars_terrain"] = {
-        name: MarsTerrain(dataset_config.get_dataset(name))
+        name: MarsTerrain(dataset_config.get_dataset(name), settings.tile_cache_path)
         for name in dataset_config.get_dataset_names()
         if dataset_config.get_dataset(name).body == "mars"
     }
@@ -265,9 +267,13 @@ async def terrain(
 
     if dataset in globals["mars_terrain"]:
         try:
-            tile = await globals["mars_terrain"][dataset].get_tile(
+            mars_terrain = globals["mars_terrain"][dataset]
+            tile = await mars_terrain.get_tile(
                 z, x, y, use_extensions["octvertexnormals"])
-            return th._create_response(request, tile)
+            response = th._create_response(request, tile)
+            response.headers["Cache-Control"] = "public, max-age=3600"
+            response.headers["X-Terrain-Version"] = mars_terrain.version
+            return response
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except asyncio.TimeoutError as exc:

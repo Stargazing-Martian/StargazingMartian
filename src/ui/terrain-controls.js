@@ -4,6 +4,9 @@ export function createTerrainControls(viewer, imagery, enterInteractiveMode, ell
     const topography = document.getElementById('topography');
     const scale = document.getElementById('relief-scale');
     const legend = document.getElementById('elevation-legend');
+    const reading = document.getElementById('terrain-reading');
+    let provider;
+    let measurement = 0;
     let ramp;
     function updateMaterial() {
         const enabled = topography.checked && !fieldset.disabled;
@@ -42,9 +45,38 @@ export function createTerrainControls(viewer, imagery, enterInteractiveMode, ell
     });
     document.getElementById('terrain-origin').textContent = location.origin;
     panel.addEventListener('wheel', event => event.stopPropagation(), { passive: true });
+    const picker = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    picker.setInputAction(async ({ position }) => {
+        if (!provider || fieldset.disabled) return;
+        const ray = viewer.camera.getPickRay(position);
+        if (!ray) return;
+        const hit = viewer.scene.globe.pick(ray, viewer.scene);
+        if (!hit) return;
+        const point = ellipsoid.cartesianToCartographic(hit);
+        const current = ++measurement;
+        reading.textContent = 'Kaynak DEM yüksekliği okunuyor…';
+        try {
+            const [sample] = await Cesium.sampleTerrainMostDetailed(provider, [point], true);
+            if (current !== measurement) return;
+            if (!Number.isFinite(sample.height)) throw new Error('Yükseklik okunamadı');
+            reading.textContent = `${Cesium.Math.toDegrees(sample.latitude).toFixed(4)}°, ` +
+                `${Cesium.Math.toDegrees(sample.longitude).toFixed(4)}° · ` +
+                `${Math.round(sample.height).toLocaleString('tr-TR')} m (kaynak DEM)`;
+        } catch (error) {
+            if (current === measurement) reading.textContent = `Ölçüm alınamadı: ${error.message}`;
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
     return {
+        setProvider(value) {
+            provider = value;
+        },
         setReady(ready) {
             fieldset.disabled = !ready;
+            if (!ready) {
+                provider = undefined;
+                ++measurement;
+            }
+            reading.textContent = ready ? 'Yükseklik okumak için yüzeyde bir noktaya tıklayın.' : '';
             updateMaterial();
         }
     };

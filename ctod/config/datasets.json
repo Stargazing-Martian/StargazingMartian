@@ -3,23 +3,15 @@
         {
             "name": "mars",
             "options": {
-                "cog": "/home/batin/Downloads/b5a11e8f23f425ae56987c27b872d509/MarsHRSCMOLA_MAP2_COG.tif",
+                "cog": "https://planetarymaps.usgs.gov/mosaic/Mars/HRSC_MOLA_Blend/Mars_HRSC_MOLA_BlendDEM_Global_200mp_v2.tif",
                 "minZoom": 0,
-                "maxZoom": 8,
-                "noData": 0,
+                "maxZoom": 9,
+                "noData": -32768,
                 "meshingMethod": "grid",
+                "resamplingMethod": "bilinear",
+                "defaultGridSize": 128,
                 "skipCache": false,
-                "zoomGridSizes": {
-                    "0": 5,
-                    "1": 5,
-                    "2": 10,
-                    "3": 10,
-                    "4": 15,
-                    "5": 20,
-                    "6": 25,
-                    "7": 30,
-                    "8": 35
-                },
+                "zoomGridSizes": {},
                 "body": "mars"
             }
         }

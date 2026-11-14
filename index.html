@@ -10,7 +10,7 @@
     <link rel="stylesheet"
     href="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Widgets/widgets.css">
 
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=6">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -69,11 +69,11 @@
         </details>
         <fieldset id="relief-controls" disabled>
             <legend>Yüzey görünümü</legend>
-            <label><input type="checkbox" id="topography"> Topografya renkleri</label>
+            <label><input type="checkbox" id="topography" checked> Topografya renkleri</label>
             <label for="relief-scale">Düşey ölçek</label>
             <select id="relief-scale">
                 <option value="1">1× — gerçek yükseklik</option>
-                <option value="5">5× — abartılı kabartı</option>
+                <option value="5" selected>5× — kabartı görünümü</option>
                 <option value="10">10× — abartılı kabartı</option>
             </select>
             <button id="olympus-view" type="button">Olympus Mons’a yaklaş</button>
@@ -82,9 +82,10 @@
             <div class="elevation-ramp"></div>
             <div class="elevation-labels"><span>−8 km</span><span>Kaynak DEM yüksekliği</span><span>+22 km</span></div>
         </div>
+        <p id="terrain-reading" role="status" aria-live="polite"></p>
     </aside>
     <p id="skybox-error" role="status" hidden>Yıldız haritası yüklenemedi. Sayfayı yenileyerek tekrar deneyin.</p>
-    <script type="module" src="app.js?v=5"></script>
+    <script type="module" src="app.js?v=9"></script>
 </body>
 
 </html>

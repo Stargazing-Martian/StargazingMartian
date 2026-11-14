@@ -1,7 +1,7 @@
-import { createMarsAtmosphere } from './mars-atmosphere.js';
 import { createVikingImagery } from '../nasa/nasa-layers.js';
-import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, saveTerrainUrl, terrainTimeoutMs } from './config.js?v=4';
-import { createTerrainControls } from '../ui/terrain-controls.js?v=4';
+import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, saveTerrainUrl, terrainTimeoutMs } from './config.js?v=5';
+import { createTerrainControls } from '../ui/terrain-controls.js?v=6';
+import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=5';
 import { createMarsSkybox } from './mars-skybox.js';
 
@@ -40,14 +40,13 @@ import { createMarsSkybox } from './mars-skybox.js';
     viewer.scene.globe.baseColor            = new Cesium.Color(0.12, 0.06, 0.03, 1.0);
     viewer.scene.globe.showGroundAtmosphere = false;
     viewer.scene.globe.enableLighting       = true;
-    viewer.scene.globe.maximumScreenSpaceError = 1.5;
+    viewer.scene.globe.maximumScreenSpaceError = 1;
+    viewer.scene.globe.tileCacheSize = 512;
     viewer.scene.light = new Cesium.DirectionalLight({
         direction: new Cesium.Cartesian3(1.0, 0.0, 0.0),
         color:     Cesium.Color.WHITE,
         intensity: 1.5
     });
-
-    createMarsAtmosphere(viewer, ellipsoid);
 
     const { enterInteractiveMode } = createMarsCamera(container, viewer);
 
@@ -107,19 +106,30 @@ import { createMarsSkybox } from './mars-skybox.js';
                 throw new Error('Terrain tile verisinden yükseklik okunamadı.');
             }
             if (current !== generation) return;
-            removeProviderError = provider.errorEvent.addEventListener(error => {
-                if (current !== generation) return;
-                console.error('Terrain tile failed', error);
-                if (error.timesRetried < 2) error.retry = true;
-                setStatus('3B arazi kısmen yüklendi; bazı bölgeler alınamadı.', 'warning');
-                connection.open = true;
+            const resolution = Math.round(metadata.sourceResolutionMeters ?? 200);
+            const readyText = `3B arazi etkin · HRSC/MOLA ≈${resolution} m`;
+            removeProviderError = monitorTerrain(provider, {
+                onFailure({ key, count, error }) {
+                    if (current !== generation) return;
+                    console.error(`Mars terrain tile ${key} failed`, error);
+                    setStatus(`3B arazi: ${count} bölge alınamadı. Yeniden deneyin.`, 'warning');
+                    errorMessage.hidden = false;
+                    errorMessage.textContent = `Tile ${key}: ${error.message ?? error}`;
+                    connection.open = true;
+                },
+                onRecovered() {
+                    if (current !== generation) return;
+                    setStatus(readyText, 'ready');
+                    errorMessage.hidden = true;
+                }
             });
             viewer.terrainProvider = provider;
+            controls.setProvider(provider);
             controls.setReady(true);
             saveTerrainUrl(url);
             address.value   = url;
             connection.open = false;
-            setStatus('3B arazi etkin · kaynak yükseklikleri', 'ready');
+            setStatus(readyText, 'ready');
         } catch (error) {
             if (current !== generation) return;
             console.error('Mars terrain unavailable', error);
@@ -132,8 +142,16 @@ import { createMarsSkybox } from './mars-skybox.js';
         }
     }
 
+    const lightOffset = new Cesium.Cartesian3();
     viewer.scene.preRender.addEventListener(() => {
-        Cesium.Cartesian3.clone(viewer.camera.directionWC, viewer.scene.light.direction);
+        // Oblique inspection light reveals slopes that a camera-aligned light flattens.
+        const direction = viewer.scene.light.direction;
+        Cesium.Cartesian3.clone(viewer.camera.directionWC, direction);
+        Cesium.Cartesian3.multiplyByScalar(viewer.camera.rightWC, .65, lightOffset);
+        Cesium.Cartesian3.add(direction, lightOffset, direction);
+        Cesium.Cartesian3.multiplyByScalar(viewer.camera.upWC, -.35, lightOffset);
+        Cesium.Cartesian3.add(direction, lightOffset, direction);
+        Cesium.Cartesian3.normalize(direction, direction);
     });
 
     document.getElementById('terrain-form').addEventListener('submit', event => {

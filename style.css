@@ -81,6 +81,8 @@ body {
 }
 #terrain-status[data-state="ready"] { color: #a9d8a6; }
 #terrain-status[data-state="error"], #terrain-error { color: #ffc1a0; }
+#terrain-status[data-state="warning"] { color: #f0c77c; }
+#terrain-reading { margin-bottom: 0; color: #d8e7c5; }
 #terrain-panel summary { cursor: pointer; }
 #terrain-form, #relief-controls { display: grid; gap: .5rem; margin: .75rem 0; }
 #terrain-panel input[type="text"], #terrain-panel select, #terrain-panel button {

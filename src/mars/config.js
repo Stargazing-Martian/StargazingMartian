@@ -1,10 +1,18 @@
 const options = globalThis.STARGAZING_CONFIG ?? {};
 export const MARS_RADIUS = 3396190;
-export const terrainTimeoutMs = options.terrainTimeoutMs ?? 15000;
+export const terrainTimeoutMs = options.terrainTimeoutMs ?? 120000;
+function defaultTerrainUrl() {
+    const { hostname, protocol } = location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
+        return `${protocol}//${hostname}:5000/tiles/mars`;
+    }
+    const codespace = hostname.match(/^(.*)-\d+\.app\.github\.dev$/);
+    return codespace ? `${protocol}//${codespace[1]}-5000.app.github.dev/tiles/mars` : '';
+}
 export function initialTerrainUrl() {
     let saved;
     try { saved = localStorage.getItem('stargazing.terrainUrl'); } catch { /* Storage can be disabled. */ }
-    return options.terrainUrl ?? saved ?? '';
+    return options.terrainUrl ?? saved ?? defaultTerrainUrl();
 }
 export function normalizeTerrainUrl(value) {
     if (!value.trim()) throw new Error('CTOD terrain adresini girin.');
