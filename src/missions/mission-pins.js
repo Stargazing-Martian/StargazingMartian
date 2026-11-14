@@ -5,8 +5,8 @@ const Cesium = globalThis.Cesium;
 // Distances are from the centre of Mars, in metres (radius ≈ 3 396 km).
 // Two thresholds (hysteresis) stop pins flickering at the boundary.
 // Stage 2a starts at 13 000 km, so a small zoom-in is enough to reveal pins.
-const SHOW_BELOW = 10_000_000;
-const HIDE_ABOVE = 11_000_000;
+const SHOW_BELOW = 10_500_000;
+const HIDE_ABOVE = 11_500_000;
 
 const PIN_SVG = `
 <svg class="mission-pin__icon" viewBox="0 0 28 36" aria-hidden="true">
@@ -16,10 +16,22 @@ const PIN_SVG = `
 
 // Pins are HTML/SVG on top of the Cesium canvas, so the browser draws them
 // at full screen resolution (Cesium renders the scene at 1x on Retina).
-export function createMissionPins(viewer, ellipsoid, missions) {
+export function createMissionPins(viewer, ellipsoid, missions, { onSelect } = {}) {
     const layer = document.createElement('div');
     layer.className = 'pin-layer';
     document.getElementById('app').appendChild(layer);
+
+    // Pins sit above the canvas; pass wheel events through so zooming
+    // still works while the cursor is over a pin.
+    layer.addEventListener('wheel', event => {
+        event.preventDefault();
+        viewer.canvas.dispatchEvent(new WheelEvent('wheel', event));
+    }, { passive: false });
+    layer.addEventListener('click', event => {
+        const pin = event.target.closest('.mission-pin');
+        const mission = pin && missions.find(m => m.id === pin.dataset.id);
+        if (mission) onSelect?.(mission);
+    });
 
     const items = missions.map(mission => {
         const element = document.createElement('div');
@@ -65,5 +77,10 @@ export function createMissionPins(viewer, ellipsoid, missions) {
 
     return {
         enable() { enabled = true; },
+        setSelected(id) {
+            for (const item of items) {
+                item.element.classList.toggle('is-selected', item.element.dataset.id === id);
+            }
+        },
     };
 }
