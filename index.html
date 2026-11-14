@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>STARGAZING</title>
+
+    <link rel="stylesheet"
+    href="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Widgets/widgets.css">
+
+    <link rel="stylesheet" href="style.css?v=5">
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
+</head>
+
+<body>
+
+    <div id="app">
+
+        <div id="mars-globe"></div>
+
+        <header id="top-header">
+
+            <h1 id="site-title">STARGAZING</h1>
+
+            <nav id="top-nav">
+
+                <a href="#about">WHO ARE WE?</a>
+                <a href="#project">ABOUT THE PROJECT</a>
+                <a href="#contact">CONTACT</a>
+
+            </nav>
+
+        </header>
+
+        <div id="context-ui">
+
+            <div id="mission-info">
+                MISSION
+            </div>
+
+            <div id="forecast-info">
+                FORECAST
+            </div>
+
+            <div id="science-info">
+                SCIENCE
+            </div>
+
+            <div id="route-info">
+                ROUTE
+            </div>
+
+        </div>
+
+    </div>
+    <aside id="terrain-panel" aria-label="Mars arazi ayarları">
+        <p id="terrain-status" role="status" aria-live="polite">3B arazi için CTOD bağlantısını ayarlayın.</p>
+        <details id="terrain-connection" open>
+            <summary>Arazi bağlantısı</summary>
+            <form id="terrain-form">
+                <label for="terrain-url">CTOD terrain adresi</label>
+                <input id="terrain-url" type="text" placeholder="https://sunucu/tiles/mars" required spellcheck="false">
+                <button type="submit" id="connect-terrain">Bağlan / yeniden dene</button>
+            </form>
+            <small>Bu sayfanın origin’i: <code id="terrain-origin"></code></small>
+            <p id="terrain-error" role="alert" hidden></p>
+        </details>
+        <fieldset id="relief-controls" disabled>
+            <legend>Yüzey görünümü</legend>
+            <label><input type="checkbox" id="topography"> Topografya renkleri</label>
+            <label for="relief-scale">Düşey ölçek</label>
+            <select id="relief-scale">
+                <option value="1">1× — gerçek yükseklik</option>
+                <option value="5">5× — abartılı kabartı</option>
+                <option value="10">10× — abartılı kabartı</option>
+            </select>
+            <button id="olympus-view" type="button">Olympus Mons’a yaklaş</button>
+        </fieldset>
+        <div id="elevation-legend" hidden>
+            <div class="elevation-ramp"></div>
+            <div class="elevation-labels"><span>−8 km</span><span>Kaynak DEM yüksekliği</span><span>+22 km</span></div>
+        </div>
+    </aside>
+    <p id="skybox-error" role="status" hidden>Yıldız haritası yüklenemedi. Sayfayı yenileyerek tekrar deneyin.</p>
+    <script type="module" src="app.js?v=5"></script>
+</body>
+
+</html>

@@ -1,0 +1,95 @@
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: #000;
+}
+
+body {
+    overflow: hidden;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #000;
+}
+
+#mars-globe {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#top-header {
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width:100%;
+    text-align: center;
+}
+#skybox-error {
+    position: fixed; bottom: 1rem; left: 1rem; z-index: 1002;
+    max-width: 25rem; padding: .6rem; background: #160f0eed;
+    color: #ffc1a0; font: 13px/1.45 system-ui, sans-serif;
+}
+
+#site-title {
+    margin: 20px 0;
+}
+
+#top-nav,
+#context-ui {
+    display: none;
+}
+#site-title { color: #f0ddd0; }
+#explore-mars, #terrain-status {
+    position: fixed;
+    z-index: 1001;
+    color: #f0ddd0;
+    font-family: system-ui, sans-serif;
+}
+#explore-mars {
+    bottom: 2rem; left: 2rem;
+    padding: .8rem 1.2rem;
+    border: 1px solid #b6876c;
+    border-radius: .5rem;
+    background: #24140e;
+    cursor: pointer;
+}
+#terrain-status {
+    bottom: 1rem; right: 1rem;
+    max-width: min(28rem, 55vw);
+    padding: .5rem;
+    background: #000b;
+    pointer-events: none;
+}
+#terrain-status:empty { display: none; }
+#terrain-panel {
+    position: fixed; z-index: 1002; top: 1rem; right: 1rem;
+    width: min(320px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem);
+    overflow: auto; box-sizing: border-box; padding: 1rem;
+    color: #f0ddd0; background: #160f0eed; border: 1px solid #775a46;
+    border-radius: .6rem; font: 13px/1.45 system-ui, sans-serif;
+}
+#terrain-panel #terrain-status {
+    position: static; margin: 0 0 .75rem; padding: 0; max-width: none; background: none;
+}
+#terrain-status[data-state="ready"] { color: #a9d8a6; }
+#terrain-status[data-state="error"], #terrain-error { color: #ffc1a0; }
+#terrain-panel summary { cursor: pointer; }
+#terrain-form, #relief-controls { display: grid; gap: .5rem; margin: .75rem 0; }
+#terrain-panel input[type="text"], #terrain-panel select, #terrain-panel button {
+    box-sizing: border-box; width: 100%; padding: .55rem;
+    color: inherit; background: #2e211b; border: 1px solid #896952; border-radius: .25rem;
+}
+#terrain-panel fieldset { border: 1px solid #775a46; }
+#terrain-panel fieldset:disabled { opacity: .5; }
+#terrain-panel button { cursor: pointer; }
+#terrain-panel code { overflow-wrap: anywhere; }
+.elevation-ramp { height: 9px; background: linear-gradient(to right,#172b70,#398db0 20%,#83b5a2 35%,#d4c17d 50%,#b97444 70%,#974839 85%,#fff0dc); }
+.elevation-labels { display: flex; justify-content: space-between; gap: .3rem; font-size: 10px; margin-top: .3rem; }
