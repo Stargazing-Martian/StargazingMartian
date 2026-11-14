@@ -152,3 +152,15 @@ body {
         -1.5px 1.5px 0 #fff, 0 1.5px 0 #fff, 1.5px 1.5px 0 #fff,
         0 0 4px #fff;
 }
+
+/* Pins are clickable; the layer itself lets clicks through to the globe. */
+.mission-pin__icon,
+.mission-pin__label {
+    pointer-events: auto;
+    cursor: pointer;
+}
+.mission-pin__icon { transition: transform .15s ease; transform-origin: 50% 100%; }
+.mission-pin:hover .mission-pin__icon { transform: scale(1.1); }
+.mission-pin.is-selected .mission-pin__icon { transform: scale(1.25); }
+.mission-pin.is-selected .mission-pin__icon path { fill: #0b57d0; }
+.mission-pin.is-selected { z-index: 1; }

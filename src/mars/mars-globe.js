@@ -5,8 +5,11 @@ import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=6';
 import { createMarsAtmosphere } from './mars-atmosphere.js';
 import { createMarsSkybox } from './mars-skybox.js';
-import { MISSIONS } from '../missions/mission-data.js?v=6';
-import { createMissionPins } from '../missions/mission-pins.js?v=8';
+import { MISSIONS } from '../missions/mission-data.js?v=10';
+import { createMissionPins } from '../missions/mission-pins.js?v=10';
+import { createMissionSelection } from '../missions/mission-selection.js?v=22';
+import { createRouteLayer } from '../routes/route-layer.js?v=21';
+import { createMockRoute } from '../routes/mock-routes.js?v=21';
 
 (async () => {
     const container = document.getElementById("mars-globe");
@@ -43,7 +46,8 @@ import { createMissionPins } from '../missions/mission-pins.js?v=8';
     viewer.scene.globe.baseColor            = new Cesium.Color(0.12, 0.06, 0.03, 1.0);
     viewer.scene.globe.showGroundAtmosphere = false;
     viewer.scene.globe.enableLighting       = true;
-    viewer.scene.globe.maximumScreenSpaceError = 1;
+    // Cesium default. 1 loads ~4x more imagery tiles and made zooming stutter.
+    viewer.scene.globe.maximumScreenSpaceError = 2;
     viewer.scene.globe.tileCacheSize = 512;
     viewer.scene.light = new Cesium.DirectionalLight({
         direction: new Cesium.Cartesian3(1.0, 0.0, 0.0),
@@ -56,8 +60,15 @@ import { createMissionPins } from '../missions/mission-pins.js?v=8';
     const { enterInteractiveMode, onEnterInteractive } = createMarsCamera(container, viewer);
 
     // Pins never show in the showcase; in exploration they need a zoom-in first.
-    const pins = createMissionPins(viewer, ellipsoid, MISSIONS);
+    let selection;
+    const pins = createMissionPins(viewer, ellipsoid, MISSIONS, {
+        onSelect: mission => selection.select(mission),
+    });
     onEnterInteractive(() => pins.enable());
+
+    // Stage 3: routes appear when zoomed close or when their pin is selected.
+    const routes = createRouteLayer(viewer, ellipsoid, MISSIONS, createMockRoute);
+    selection = createMissionSelection(viewer, ellipsoid, { pins, routes, missions: MISSIONS });
 
     const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));
     const controls = createTerrainControls(viewer, imagery, enterInteractiveMode, ellipsoid);
