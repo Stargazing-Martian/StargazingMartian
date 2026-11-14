@@ -1,0 +1,27 @@
+{
+    "datasets": [
+        {
+            "name": "mars",
+            "options": {
+                "cog": "/home/batin/Downloads/b5a11e8f23f425ae56987c27b872d509/MarsHRSCMOLA_MAP2_COG.tif",
+                "minZoom": 0,
+                "maxZoom": 8,
+                "noData": 0,
+                "meshingMethod": "grid",
+                "skipCache": false,
+                "zoomGridSizes": {
+                    "0": 5,
+                    "1": 5,
+                    "2": 10,
+                    "3": 10,
+                    "4": 15,
+                    "5": 20,
+                    "6": 25,
+                    "7": 30,
+                    "8": 35
+                },
+                "body": "mars"
+            }
+        }
+    ]
+}
