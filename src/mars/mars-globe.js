@@ -15,9 +15,25 @@ import { createMissionPanel } from '../ui/mission-panel.js?v=6';
 import { createPhotoViewer } from '../ui/photo-viewer.js?v=5';
 import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=4';
 import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
+import { createAbout } from '../ui/about.js?v=1';
+
+// While the globe and the app load, a skeleton screen is shown and
+// exploring is held back: the scroll that would start it is swallowed.
+const isLoading = () => document.body.classList.contains('is-loading');
+window.addEventListener('wheel', event => {
+    if (isLoading()) { event.preventDefault(); event.stopImmediatePropagation(); }
+}, { capture: true, passive: false });
+createAbout();
 
 (async () => {
     const container = document.getElementById("mars-globe");
+    let appReady = false;
+    // Loaded = first surface tiles on screen and every layer wired up.
+    const finishLoading = () => {
+        if (!appReady || !container.dataset.surfaceReady || !isLoading()) return;
+        document.body.classList.remove('is-loading');
+        document.getElementById('loading-screen').setAttribute('aria-busy', 'false');
+    };
     const routeData = loadRoutes(MISSIONS); // fetch while the viewer starts
     const corridorData = loadCorridors()
         .catch(error => { console.error('Corridors could not be loaded', error); return undefined; });
@@ -92,7 +108,9 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     onEnterInteractive(() => pins.enable());
     // The logo is large on the showcase and shrinks into the corner for exploring.
     onEnterInteractive(() => document.body.classList.add('is-exploring'));
-    document.getElementById('explore-hint').addEventListener('click', () => enterInteractiveMode());
+    document.getElementById('explore-hint').addEventListener('click', () => {
+        if (!isLoading()) enterInteractiveMode();
+    });
 
     // Stage 3: routes appear when zoomed close or when their pin is selected.
     const routes = createRouteLayer(viewer, ellipsoid, await routeData);
@@ -217,7 +235,7 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     // Do not expose an empty dark globe while its first surface tiles arrive.
     // Show it once the imagery tiles are in, or after 3 s at the latest;
     // never wait for the 3D terrain download (tens of MB on a slow link).
-    const reveal = () => { container.dataset.surfaceReady = 'true'; revealSurface(); };
+    const reveal = () => { container.dataset.surfaceReady = 'true'; revealSurface(); finishLoading(); };
     const revealSurface = viewer.scene.postRender.addEventListener(() => {
         if (viewer.scene.globe.tilesLoaded) reveal();
     });
@@ -230,6 +248,8 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     // Enabled on every host, including GitHub Pages. The source lives in site-config.js.
     // Deferred: the showcase is a far view where relief is invisible, so the
     // heavy terrain tiles start when exploring begins (or after 5 s idle).
+    appReady = true;
+    finishLoading();
     let terrainStarted = false;
     const startTerrain = () => { if (!terrainStarted) { terrainStarted = true; void loadTerrain(); } };
     onEnterInteractive(startTerrain);

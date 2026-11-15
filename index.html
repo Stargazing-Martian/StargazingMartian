@@ -13,16 +13,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=39">
+    <link rel="stylesheet" href="style.css?v=41">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
-<body>
+<body class="is-loading">
 
     <div id="app">
 
         <div id="mars-globe"></div>
 
+        <!-- Loading skeleton: shown until the globe and the app are ready. -->
+        <div id="loading-screen" aria-hidden="true">
+            <div class="skeleton-planet"></div>
+            <div class="skeleton-panel">
+                <span class="skeleton-line" style="width: 38%"></span>
+                <span class="skeleton-line skeleton-line--title"></span>
+                <span class="skeleton-line" style="width: 72%"></span>
+            </div>
+            <p class="loading-label" role="status">Loading Mars<span>…</span></p>
+        </div>
+        <button id="about-open" type="button" aria-haspopup="dialog" aria-controls="about-dialog">About</button>
         <a id="site-logo" href="./" aria-label="Stargazing Martian — home">
             <svg class="logo-mark" viewBox="0 0 400 400" aria-hidden="true">
                 <g transform="matrix(1,0,0,1,-14186.592124,-2649.613729)"><g transform="matrix(1,0,0,1,-25,0)"><g transform="matrix(0.829065,0,0,0.827818,6197.022657,1987.359603)">
@@ -79,6 +90,61 @@
 
         </div>
 
+    </div>
+    <div id="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" hidden>
+        <article class="about-card mission-panel">
+            <header>
+                <p class="eyebrow">NASA Space Apps Challenge 2026</p>
+                <button class="close" type="button" data-about-close aria-label="Close">×</button>
+            </header>
+            <h2 id="about-title">Stargazing Martian</h2>
+            <p class="place">A layered Mars atlas for planning a Mars-walk.</p>
+            <p>Robots have already walked Mars for us. Stargazing Martian turns their real
+                journeys into a map an astronaut can plan with: every rover traverse NASA has
+                published, split into science phases and scored for how hard it would be on foot,
+                next to orbital science layers and a planet-wide network of expedition corridors.</p>
+
+            <h3>How to use it</h3>
+            <ul class="reasons">
+                <li>Scroll to leave the showcase and explore the globe.</li>
+                <li>Click a pin for the mission card, photos and 360° panoramas.</li>
+                <li><b>Explore route</b> lists the route's segments, coloured green, orange or red by
+                    walking difficulty; hover or click them on the map or in the list.</li>
+                <li>Grey roads are expedition corridors between destinations; hover to see their
+                    difficulty, click for distance, climb, slope and temperature.</li>
+                <li><b>Map mode</b> switches between terrain, topography, dust, radiation and
+                    temperature.</li>
+            </ul>
+
+            <h3>How it works</h3>
+            <p>Route difficulty uses the rover's own tilt where it was logged (Curiosity,
+                Perseverance) and mission-record notes where it was not (Spirit, Opportunity).
+                Corridors are least-cost paths over MOLA slope and roughness, TES daytime
+                temperature and a radiation-shielding proxy.</p>
+            <p class="note">These are planning aids, not verified safe routes: orbital data cannot
+                see boulders, small craters or cliffs, and rover tilt is only a proxy for slope.</p>
+
+            <h3>NASA data</h3>
+            <ul class="about-links">
+                <li><a href="https://mars.nasa.gov/maps/" target="_blank" rel="noopener noreferrer">NASA MMGIS rover traverses and waypoints (Perseverance, Curiosity, Ingenuity)</a></li>
+                <li><a href="https://an.rsl.wustl.edu/mera/AN/pages/mer/mer_traverse.htm" target="_blank" rel="noopener noreferrer">PDS MER Analyst's Notebook traverses (Spirit, Opportunity)</a></li>
+                <li><a href="https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/" target="_blank" rel="noopener noreferrer">MGS MOLA MEGDR global topography</a></li>
+                <li><a href="https://doi.org/10.17189/kwez-jq47" target="_blank" rel="noopener noreferrer">MGS TES dust and surface temperature (NASA PDS)</a></li>
+                <li><a href="https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/" target="_blank" rel="noopener noreferrer">MER Pancam atmospheric opacity</a></li>
+                <li><a href="https://trek.nasa.gov/mars/" target="_blank" rel="noopener noreferrer">NASA Mars Trek imagery (Viking, CTX)</a></li>
+                <li><a href="https://images.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Image and Video Library (photos and panoramas)</a></li>
+                <li><a href="https://doi.org/10.1029/2009SW000564" target="_blank" rel="noopener noreferrer">NASA/JSC HZETRN study (radiation proxy)</a></li>
+            </ul>
+
+            <h3>Other tools</h3>
+            <p class="note">CesiumJS, Pannellum, NumPy, scikit-image, Instrument Sans and JetBrains Mono
+                (Google Fonts).</p>
+
+            <h3>Use of AI</h3>
+            <p class="note">Much of the code and some of the text were written with an AI assistant
+                (Anthropic's Claude), directed and reviewed by the team. No AI-generated images,
+                video or audio are used: every photo is NASA's own, credited in the viewer.</p>
+        </article>
     </div>
     <aside id="terrain-panel" class="mission-panel map-panel" aria-label="Mars map settings">
         <h2>Map mode</h2>
@@ -263,7 +329,7 @@
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
     <script src="site-config.js?v=1"></script>
-    <script type="module" src="app.js?v=49"></script>
+    <script type="module" src="app.js?v=50"></script>
 </body>
 
 </html>
