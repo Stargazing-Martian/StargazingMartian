@@ -12,6 +12,8 @@ export function createMapModePicker() {
         : topography.checked ? 'topography' : 'surface';
     const sync = () => {
         for (const tile of tiles) tile.setAttribute('aria-checked', String(tile.dataset.mode === current()));
+        // Lets CSS tint only the plain surface view (never the data colours).
+        document.body.dataset.mapMode = current();
     };
     const set = (element, property, value) => {
         if (element[property] === value) return;

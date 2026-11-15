@@ -1256,3 +1256,32 @@ body:not(.is-exploring) #terrain-panel { display: none; }
 .about-team li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: .5px solid var(--line); }
 .about-team li:last-child { border-bottom: 0; }
 .about-team span { color: var(--muted); font: 500 11px/1.6 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+
+/* No Cesium ion service is used (imagery: NASA Trek; terrain: our own
+   package), so the ion logo is not required. The data-attribution credits
+   stay visible. */
+.cesium-credit-logoContainer { display: none !important; }
+
+/* "Night light" for the planet itself (canvas only, never the UI): a warm,
+   slightly deeper amber grade with a soft vignette. Applied only to the plain
+   surface views so the data colours of the science maps stay true. */
+#mars-globe .cesium-widget canvas {
+    transition: opacity .8s ease, filter .6s ease;
+}
+body:not([data-map-mode]) #mars-globe .cesium-widget canvas,
+body[data-map-mode="surface"] #mars-globe .cesium-widget canvas {
+    filter: sepia(.22) saturate(1.18) hue-rotate(-6deg) contrast(1.05) brightness(.94);
+}
+#mars-globe::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 55% 55%, transparent 55%, rgb(20 8 2 / .38) 100%);
+    transition: opacity .6s ease;
+}
+body[data-map-mode]:not([data-map-mode="surface"]) #mars-globe::after { opacity: 0; }
+
+/* No Cesium badges on screen: data credits live in About and the README. */
+.cesium-viewer-bottom,
+.cesium-viewer-fullscreenContainer { display: none !important; }
