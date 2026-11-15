@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=29">
+    <link rel="stylesheet" href="style.css?v=31">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -92,7 +92,6 @@
                 <option value="dust">Atmospheric dust · NASA TES</option>
                 <option value="temperature">Surface temperature · NASA TES</option>
             </select>
-            <p id="science-map-context" class="science-notes">Free archive browsing · no mission/date association.</p>
             <div id="dust-map-panel" class="scientific-map-panel" hidden>
                 <p class="science-badge">Historical observation · regional atmosphere · 6° × 3°</p>
                 <label for="dust-map-product">Observation period from the archive</label>
@@ -156,67 +155,71 @@
                 </details>
             </div>
         </fieldset>
-        <p id="terrain-status" role="status" aria-live="polite">Loading Mars terrain…</p>
-        <p id="terrain-error" role="status" hidden></p>
-        <p id="terrain-coverage" class="science-notes" hidden></p>
-        <fieldset id="relief-controls" disabled>
-            <legend>Surface view</legend>
-            <label><input type="checkbox" id="topography" checked> Topographic mode</label>
-            <label for="relief-scale">Height scale</label>
-            <select id="relief-scale">
-                <option value="1">1× — true height</option>
-                <option value="5" selected>5× — relief view</option>
-            </select>
-        </fieldset>
         <div id="elevation-legend" hidden>
             <div class="elevation-ramp"></div>
             <div class="elevation-labels"><span>−8 km</span><span>Source DEM height</span><span>+22 km</span></div>
             <p id="relief-scale-note" class="science-notes">Relief shown at 5× height; colours use source DEM metres.</p>
         </div>
-        <details id="mission-environment">
-            <summary>Mission and time · NASA Pancam</summary>
-            <div class="mission-environment-controls">
-                <p class="science-badge">Historical rover observation · Spirit / Opportunity · 440 nm</p>
-                <label for="mission-weather-mission">Mission for environmental observations</label>
-                <select id="mission-weather-mission"></select>
-                <label for="mission-weather-kind">Time selection</label>
-                <select id="mission-weather-kind">
-                    <option value="sol">Mission Sol number</option>
-                    <option value="utc">Approximate UTC day (spacecraft clock)</option>
+        <details id="map-more" class="map-more">
+            <summary>More options</summary>
+            <p id="terrain-status" role="status" aria-live="polite">Loading Mars terrain…</p>
+            <p id="terrain-error" role="status" hidden></p>
+            <p id="terrain-coverage" class="science-notes" hidden></p>
+            <p id="science-map-context" class="science-notes">Free archive browsing · no mission/date association.</p>
+            <fieldset id="relief-controls" disabled>
+                <legend>Surface view</legend>
+                <label><input type="checkbox" id="topography" checked> Topographic mode</label>
+                <label for="relief-scale">Height scale</label>
+                <select id="relief-scale">
+                    <option value="1">1× — true height</option>
+                    <option value="5" selected>5× — relief view</option>
                 </select>
-                <label id="mission-weather-sol-label" for="mission-weather-sol">Mission Sol</label>
-                <input id="mission-weather-sol" type="number" min="1" step="1" value="2">
-                <label id="mission-weather-date-label" for="mission-weather-date" hidden>UTC day</label>
-                <input id="mission-weather-date" type="date" value="2004-01-26" hidden>
-                <button id="mission-weather-retry" type="button">Reload observations</button>
-                <p id="mission-weather-status" role="status" aria-live="polite"></p>
-                <label for="mission-weather-records">Matching source observation</label>
-                <select id="mission-weather-records" disabled></select>
-                <p id="mission-weather-reading" class="scientific-map-reading" role="status" aria-live="polite"></p>
-                <details id="mission-weather-details" class="science-notes" hidden>
-                    <summary>Observation identity and source</summary>
-                    <p id="mission-weather-provenance" class="scientific-map-reading"></p>
-                    <a id="mission-weather-source" hidden target="_blank" rel="noopener noreferrer">NASA Pancam source table</a>
-                </details>
-                <label><input id="mission-weather-bind" type="checkbox" checked> Match map periods to this observation</label>
-                <button id="mission-weather-visit" type="button" disabled>Visit the selected mission route</button>
-                <details class="science-notes">
-                    <summary>Observation limits</summary>
-                    <p>440 nm optical depth differs from TES 9.3 μm absorption optical depth normalized
-                        to 610 Pa; they are not compared directly. The relative-error field is not total
-                        uncertainty. The calibration header separately gives absolute error 0.03 at airmass 1.</p>
-                    <p>Sol is mission-specific and is the NASA local-time field rounded up. Approximate
-                        UTC is derived from integer-second image spacecraft clocks using NASA SPICE kernels.
-                        Archive endpoint differences of 1–6 seconds are observed; exact UTC dates near midnight
-                        cannot be guaranteed. Opportunity records outside the clock kernel coverage after
-                        28 March 2017 retain only their Sol; UTC is not extrapolated.</p>
-                    <p>Missing days are not filled. The mission pin is a landing-region reference, not the
-                        exact observation position. No air temperature, wind or live forecast is provided;
-                        this archive alone cannot establish astronaut route safety. The panel mission can
-                        be examined independently of the selection on the map.</p>
-                    <a href="https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/" target="_blank" rel="noopener noreferrer">NASA MER Pancam archive</a>
-                </details>
-            </div>
+            </fieldset>
+            <details id="mission-environment">
+                <summary>Mission and time · NASA Pancam</summary>
+                <div class="mission-environment-controls">
+                    <p class="science-badge">Historical rover observation · Spirit / Opportunity · 440 nm</p>
+                    <label for="mission-weather-mission">Mission for environmental observations</label>
+                    <select id="mission-weather-mission"></select>
+                    <label for="mission-weather-kind">Time selection</label>
+                    <select id="mission-weather-kind">
+                        <option value="sol">Mission Sol number</option>
+                        <option value="utc">Approximate UTC day (spacecraft clock)</option>
+                    </select>
+                    <label id="mission-weather-sol-label" for="mission-weather-sol">Mission Sol</label>
+                    <input id="mission-weather-sol" type="number" min="1" step="1" value="2">
+                    <label id="mission-weather-date-label" for="mission-weather-date" hidden>UTC day</label>
+                    <input id="mission-weather-date" type="date" value="2004-01-26" hidden>
+                    <button id="mission-weather-retry" type="button">Reload observations</button>
+                    <p id="mission-weather-status" role="status" aria-live="polite"></p>
+                    <label for="mission-weather-records">Matching source observation</label>
+                    <select id="mission-weather-records" disabled></select>
+                    <p id="mission-weather-reading" class="scientific-map-reading" role="status" aria-live="polite"></p>
+                    <details id="mission-weather-details" class="science-notes" hidden>
+                        <summary>Observation identity and source</summary>
+                        <p id="mission-weather-provenance" class="scientific-map-reading"></p>
+                        <a id="mission-weather-source" hidden target="_blank" rel="noopener noreferrer">NASA Pancam source table</a>
+                    </details>
+                    <label><input id="mission-weather-bind" type="checkbox" checked> Match map periods to this observation</label>
+                    <button id="mission-weather-visit" type="button" disabled>Visit the selected mission route</button>
+                    <details class="science-notes">
+                        <summary>Observation limits</summary>
+                        <p>440 nm optical depth differs from TES 9.3 μm absorption optical depth normalized
+                            to 610 Pa; they are not compared directly. The relative-error field is not total
+                            uncertainty. The calibration header separately gives absolute error 0.03 at airmass 1.</p>
+                        <p>Sol is mission-specific and is the NASA local-time field rounded up. Approximate
+                            UTC is derived from integer-second image spacecraft clocks using NASA SPICE kernels.
+                            Archive endpoint differences of 1–6 seconds are observed; exact UTC dates near midnight
+                            cannot be guaranteed. Opportunity records outside the clock kernel coverage after
+                            28 March 2017 retain only their Sol; UTC is not extrapolated.</p>
+                        <p>Missing days are not filled. The mission pin is a landing-region reference, not the
+                            exact observation position. No air temperature, wind or live forecast is provided;
+                            this archive alone cannot establish astronaut route safety. The panel mission can
+                            be examined independently of the selection on the map.</p>
+                        <a href="https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/" target="_blank" rel="noopener noreferrer">NASA MER Pancam archive</a>
+                    </details>
+                </div>
+            </details>
         </details>
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
