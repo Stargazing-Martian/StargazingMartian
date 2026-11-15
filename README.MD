@@ -17,13 +17,39 @@ astronomik sınırlar: [skybox notları](assets/skybox/README.md).
 
 Yönelim testleri: `node --test tests/mars-orientation.test.mjs`.
 
-## Ayrı sunucularla kullanım
+## GitHub Pages: uygulama ve arazi tek adreste
 
-Stargazing ve CTOD'yi kendi seçtiğiniz adreslerde/portlarda çalıştırın. Uygulama
-belirli bir port gerektirmez. Stargazing'i açıp **Arazi bağlantısı → CTOD terrain
-adresi** alanına çalışan servisin `/tiles/mars` adresini girin ve **Bağlan**'a
-basın. Sunucu kök adresi veya `layer.json` adresi de kabul edilir. Başarılı adres
-bu tarayıcı ve origin için hatırlanır. Port/origin değiştiğinde yeniden girilebilir.
+Yayın adresi: <https://stargazing-martian.github.io/StargazingMartian/>.
+CTOD'un ürettiği gerçek arazi dosyaları `data/terrain/mars/` altında uygulamayla
+birlikte sunulur. Ziyaretçinin Docker veya ayrı bir CTOD servisi açması gerekmez.
+`site-config.js`, bu statik paketi otomatik seçer. Aynı dosyalar basit bir yerel
+HTTP sunucusunda da çalışır:
+
+```sh
+python3 -m http.server 5500
+```
+
+<http://localhost:5500> adresini açın. **Topographic mode**, yalnızca yükseklik
+renklerini açıp kapatır; gerçek 3B arazi etkin kalır. Sıcaklık, atmosferik toz,
+görev/Sol/UTC gözlemleri ve yeni görev/fotoğraf paneli aynı yayın altında çalışır.
+
+Paket 1.021 tile ve yaklaşık 322 MiB içerir. Tüm gezegen seviye 4'e, görev
+bölgeleri ve mevcut rover rotaları seviye 9'a kadar kapsanır. Görev bölgelerinin
+dışında daha kaba arazi kullanılır; kaynak DEM'in 200 m çözünürlüğü bütün
+gezegenin her yakınlaştırmada 200 m ayrıntı taşıdığı anlamına gelmez.
+Mesh yoğunluğu düşürülmemiştir. [Paket, kapsama ve yeniden üretim notları](data/terrain/README.md).
+
+Kökteki `.nojekyll` korunur; depo kökünden GitHub Pages yayını kullanılabilir.
+`data/terrain/mars/` içindeki bütün tile'lar, `layer.json` ve `export.json` aynı
+commit'te bulunmalıdır. Dosyalar yüklenmeden yalnızca arayüzü yayımlamak yeterli değildir.
+
+## Ayrı sunucuyla geliştirme
+
+Gerekirse `site-config.js` içindeki `terrainUrl` değerini çalışan servisin
+`/tiles/mars` adresiyle değiştirin. HTTPS yayında HTTPS terrain adresi gerekir.
+`terrainUrl: null`, localhost ve Codespaces'te otomatik CTOD servisini seçer.
+Tarayıcıdaki eski kayıtlı adresler yayın ayarını değiştirmez. URL alanı ve
+elle bağlantı düğmesi son kullanıcı arayüzünden kaldırılmıştır.
 
 ## Hızlı başlatma (Docker)
 
@@ -41,11 +67,12 @@ docker compose up -d
 
 Durdurmak için `docker compose down` kullanın; önbellek volume'u korunur.
 
-Ardından <http://localhost:5500> adresini açın. Arazi bağlantısı, CTOD adresini
-yerel kurulumda otomatik seçer. İlk açılış Docker imajlarını ve Python
-bağımlılıklarını indirir. Mars DEM'i Git deposuna eklenmez. Yerel kaynak yoksa CTOD, resmi USGS HRSC/MOLA
-200 m GeoTIFF'ini HTTP aralık istekleriyle bloklar halinde okur; dosyanın tamamını
-indirmez. Uzaktan kaynak ilk tile'larda ağ gecikmesine tabidir.
+Ardından <http://localhost:5500> adresini açın. Statik arazi paketi varsayılandır;
+canlı CTOD geliştirmesi için `site-config.js` içinde `terrainUrl: null` seçin.
+Docker, arazi paketini yeniden üretirken veya backend geliştirmesi yaparken
+kullanılır; normal site ziyaretinde gerekmez. İlk imaj kurulumu Python
+bağımlılıklarını indirir. Yerel DEM yoksa CTOD resmi USGS HRSC/MOLA rasterını
+HTTP aralık istekleriyle okur.
 
 Yerel DEM için `.env.example` dosyasını `.env` olarak kopyalayıp
 `STARGAZING_DEM_DIR` değerini `MarsHRSCMOLA_MAP2_COG.tif` dosyanızın bulunduğu
@@ -62,27 +89,18 @@ DEM kaynağı: [USGS Astrogeology](https://astrogeology.usgs.gov/search/map/Mars
 HRSC verisi CC BY-SA 3.0 IGO koşullarına tabidir; akademik kullanımda kaynak
 yazarlarını belirtin.
 
-İstenirse `index.html` içindeki module script'ten önce merkezi ayar verilebilir:
-
-```html
-<script>
-  globalThis.STARGAZING_CONFIG = {
-    terrainUrl: "https://terrain.example.com/tiles/mars",
-    terrainTimeoutMs: 120000
-  };
-</script>
-```
-
-Bu açık ayar, tarayıcıda kaydedilen adresten önceliklidir. HTTPS sayfası HTTPS
-terrain servisi gerektirir. `file://` yerine bir HTTP geliştirme sunucusu kullanın.
+Yayın kaynağı `site-config.js` dosyasından yönetilir. Varsayılan
+`terrainUrl: "./data/terrain/mars"` aynı site altındaki dosyaları kullanır.
+Dış servis seçilecekse tam HTTPS adresini buraya yazın. Ayar dosyası herkese
+açıktır; anahtar veya parola içermemelidir. `file://` yerine HTTP sunucusu kullanın.
 
 ## CORS
 
 CTOD'deki güncel ayar `localhost`, `127.0.0.1` ve `[::1]` originlerini herhangi
 bir portta kabul eder. Harici host/domain kullanıldığında CTOD'ye **Stargazing
 sayfasının origin'i** `--cors-allow-origins` veya `CTOD_CORS_ALLOW_ORIGINS` ile
-verilmelidir. Bu, CTOD'nin kendi adresi değildir. Panel mevcut sayfanın origin'ini
-gösterir. Ayar değişikliği CTOD tekrardan başlatılınca uygulanır.
+verilmelidir. Bu, CTOD'nin kendi adresi değildir. Statik Pages paketinde bütün
+veriler aynı origin'dedir ve CORS ayarı gerekmez.
 
 Üretimde yerel geliştirme iznini kapatmak için `CTOD_CORS_ALLOW_ORIGIN_REGEX=""`
 kullanın ve izin verilen site originlerini açıkça belirtin. `no-cors` kullanmak
@@ -90,18 +108,16 @@ kullanın ve izin verilen site originlerini açıkça belirtin. `no-cors` kullan
 
 ## Topografya
 
-**3B arazi etkin** durumu yalnızca metadata ve örnek terrain tile'ları Cesium
-tarafından okunup yükseklikler doğrulanınca gösterilir. Bağlantı başarısızsa
-uygulama açıkça yalnızca yüzey görüntüsü gösterdiğini belirtir. Tek tile hatası
-önceden yüklenmiş bütün araziyi kapatmaz. Bağlantı panelinden yeniden denenebilir.
+**3D terrain active** durumu, yalnızca metadata ve örnek terrain tile'larının
+Cesium tarafından okunup yükseklikleri doğrulandığında gösterilir. Eksik veride
+uygulama yüzey görünümüne döner; bilimsel haritalar ve görev gözlemleri çalışır.
 
-- **Olympus Mons’a yaklaş:** eğik yakın görünümle yamaç ve krateri inceleyin.
-- **Topografya renkleri:** doku yerine DEM yüksekliklerini renklerle gösterir;
-  varsayılan açıktır ve düşey ölçek 5× olarak açıkça etiketlenir.
-- **Yüzeye tıklama:** en ayrıntılı terrain seviyesinden kaynak yüksekliğini metre
-  ve koordinatla gösterir; bu değer düşey abartıdan etkilenmez.
-- **1×:** kaynak yüksekliklerinin gerçek ölçeği; **5×/10×:** açıkça etiketlenmiş
-  görsel abartı. Renk lejandı abartıdan bağımsız kaynak yüksekliklerini gösterir.
+Arazi görünümünde **Topographic mode** anahtarı ve yalnızca **1× / 5×** ölçek seçimi bulunur. Açıkken DEM yüksekliği
+renklerle gösterilir; kapalıyken Viking yüzey dokusu görünür. Her iki durumda
+3B geometri etkindir. 5× kabartı varsayılandır; 1× gerçek ölçeğe geçilebilir. Seçim lejantta belirtilir; renkler
+kaynak metre cinsindendir. Bağlantı formu, 10× seçeneği, Olympus düğmesi
+ve normal tıkla yükseklik okuma kaldırılmıştır; normal tıklar görev/rota
+seçimine ayrılır. Bilimsel haritaların Shift+tıkla sayısal okuması korunur.
 
 Gezegenin tamamına uzaktan bakarken gerçek ölçekte kabartı çok küçük görünür;
 yakın görünüm veya abartılı ölçek kullanın. Globe, terrain ve WMTS aynı
@@ -129,7 +145,7 @@ aralığını UTC olarak gösterir. Rota/görev tarihiyle otomatik eşleştirme 
 
 Bilimsel mod açıldığında topografya renkleri ve görsel aydınlatma geçici olarak
 devreden çıkar; **Yüzey ve arazi** seçildiğinde önceki görünüm geri gelir.
-CTOD arazi sağlayıcısı, kamera, rota/pinler ve düşey ölçek korunur. Veri yüklenemezse
+CTOD arazi sağlayıcısı, kamera, rota/pinler ve 1×/5× düşey ölçek korunur. Veri yüklenemezse
 yüzey görünümü ve açıklayıcı hata gösterilir. Statik JSON dosyaları web
 uygulamasıyla birlikte sunulur; ek servis veya canlı NASA erişimi gerekmez.
 
@@ -157,6 +173,32 @@ otomatik eşleştirme veya rota güvenliği değerlendirmesi yapılmaz.
 
 Yöntem, kaynaklar ve yeniden üretim:
 [Yüzey sıcaklığı veri notları](data/science/tes-temperature/README.md).
+
+## Görev ve zamanla çevre gözlemi
+
+Arazi panelindeki **Görev ve zaman · NASA Pancam** bölümünde Spirit veya
+Opportunity ve göreve özel Sol numarası (örnek: **2**) seçilir. Alternatif
+olarak araç saatinden türetilmiş yaklaşık UTC günüyle arama yapılabilir.
+Birden fazla eşleşmede gerçek gözlemler ayrı ayrı seçilebilir. Görev pinine
+tıklamak paneldeki görevi de seçer; panelde tarih değiştirmek kamerayı oynatmaz.
+**Seçili görevin rotasına git** düğmesi mevcut rota görünümünü açar.
+
+Pancam'ın 440 nm atmosfer optik derinliği sunulur. Kaynak göreli hata alanı,
+Sol, Ls, görüntü kimliği ve yaklaşık UTC açıkça gösterilir. Eksik kayıt başka
+görevden veya en yakın günden doldurulmaz. Diğer görevlerde veri eklenmediyse
+panel bunu belirtir. Hava sıcaklığı ve rüzgâr bu kaynakta bulunmaz.
+
+**Harita dönemini bu gözleme bağla** açıkken toz/ısı listesi yalnızca seçili
+UTC gözlemiyle örtüşen örnek dönemleri içerir. Eşleşme yoksa katman kaldırılır
+ve yüzey görünümü korunur. Bu, bölgesel dönem örtüşmesidir; aynı gün roverın
+tam konumunda ölçülen hava durumu değildir. İniş bölgesinin referans hücresi
+ayrıca etiketlenir. Kutuyu kapatarak serbest arşiv taramasına dönülür.
+
+Spirit 4.391, Opportunity 8.697 tarihsel ölçüm içerir. Opportunity'nin 408
+ölçümü NASA saat dosyasının geçerlilik sınırını aştığından yalnızca Sol ile
+gösterilir; UTC ve harita dönemi türetilmez. Veriler web uygulamasıyla birlikte
+sunulur; ek servis veya Docker kurulumu gerektirmez.
+[Kaynaklar, saat dönüşümü ve bilimsel sınırlar](data/science/mer-weather/README.md).
 
 ## Mars arazi üretimi (v3)
 

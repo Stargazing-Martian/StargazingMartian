@@ -36,6 +36,7 @@ export async function loadRoutes(missions) {
 
 export function createRouteLayer(viewer, ellipsoid, routeData) {
     const routes = new Map();
+    let terrainProvider;
 
     function addLine(positions) {
         return viewer.entities.add({
@@ -45,12 +46,13 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
     }
 
     function setStyle(pair, style) {
+        const onGround = pair.casing.polyline.clampToGround.getValue();
         pair.casing.polyline.width = style.casingWidth;
         pair.casing.polyline.material = style.casing;
-        pair.casing.polyline.zIndex = style.z;
+        pair.casing.polyline.zIndex = onGround ? style.z : undefined;
         pair.fill.polyline.width = style.fillWidth;
         pair.fill.polyline.material = style.fill;
-        pair.fill.polyline.zIndex = style.z + 1;
+        pair.fill.polyline.zIndex = onGround ? style.z + 1 : undefined;
     }
 
     for (const [id, data] of routeData) {
@@ -68,7 +70,64 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
             setStyle(segment.hover, STYLE.hover);
             return segment;
         });
-        routes.set(id, { positions, segments, shown: false });
+        routes.set(id, { positions, segments, shown: false,
+            cartographics: data.points.map(([lon, lat]) => Cesium.Cartographic.fromDegrees(lon, lat)) });
+    }
+
+    // Cesium ground-polyline classification can clip exaggerated Mars heights.
+    // At 5x, draw ordinary lines at sampled DEM heights instead. Fetch only
+    // visible routes, once per provider; scale switches reuse those same samples.
+    function updateHeights(route) {
+        if (!route.heights) return;
+        const scale = viewer.scene.verticalExaggeration;
+        const relativeHeight = viewer.scene.verticalExaggerationRelativeHeight;
+        if (route.displayScale === scale && route.relativeHeight === relativeHeight) return;
+        route.displayScale = scale;
+        route.relativeHeight = relativeHeight;
+        const raised = scale !== 1;
+        const drawing = [[], [], [], []];
+        route.cartographics.forEach((point, i) => {
+            const height = (route.heights[i] - relativeHeight) * scale + relativeHeight + (raised ? 5 : 0);
+            Cesium.Cartesian3.fromRadians(point.longitude, point.latitude, height, ellipsoid, route.positions[i]);
+            if (raised) {
+                // Separate casing/fill/hover slightly to prevent coplanar depth
+                // flicker; zIndex applies only to ground classification lines.
+                for (let j = 0; j < drawing.length; ++j) {
+                    drawing[j].push(Cesium.Cartesian3.fromRadians(point.longitude, point.latitude, height + j, ellipsoid));
+                }
+            }
+        });
+        for (const segment of route.segments) {
+            let layerIndex = 0;
+            for (const pair of [segment.line, segment.hover]) {
+                for (const entity of [pair.casing, pair.fill]) {
+                    entity.polyline.zIndex = undefined;
+                    entity.polyline.clampToGround = !raised;
+                    entity.polyline.arcType = raised ? Cesium.ArcType.NONE : Cesium.ArcType.GEODESIC;
+                    entity.polyline.positions = raised ? drawing[layerIndex].slice(segment.from, segment.to + 1) : segment.positions.slice();
+                    ++layerIndex;
+                }
+            }
+            setStyle(segment.line, segment.style);
+            setStyle(segment.hover, STYLE.hover);
+        }
+        viewer.scene.requestRender();
+    }
+
+    async function sampleRouteHeights(id, route) {
+        const provider = terrainProvider;
+        route.heightAttempt = provider;
+        try {
+            const samples = await Cesium.sampleTerrainMostDetailed(provider,
+                route.cartographics.map(point => Cesium.Cartographic.clone(point)), true);
+            if (terrainProvider !== provider) return;
+            if (samples.some(point => !Number.isFinite(point.height))) throw new Error('Missing route terrain heights');
+            route.heights = samples.map(point => point.height);
+            route.displayScale = undefined;
+            updateHeights(route);
+        } catch (error) {
+            console.warn(`Route ${id}: terrain alignment unavailable`, error);
+        }
     }
 
     let selectedId;
@@ -99,6 +158,9 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
         const close = height < SHOW_BELOW_HEIGHT;
         for (const [id, route] of routes) {
             route.shown = close || id === selectedId;
+            if (route.shown && terrainProvider && viewer.scene.verticalExaggeration !== 1 &&
+                route.heightAttempt !== terrainProvider) void sampleRouteHeights(id, route);
+            updateHeights(route);
             route.segments.forEach((segment, index) => {
                 segment.line.casing.show = segment.line.fill.show = route.shown;
                 const isHovered = route.shown && hovered?.id === id && hovered.segment === index;
@@ -118,6 +180,7 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
     }
 
     return {
+        setTerrain(provider) { terrainProvider = provider; },
         positionsOf(id, segment) {
             const route = routes.get(id);
             return segment === undefined ? route?.positions : route?.segments[segment]?.positions;

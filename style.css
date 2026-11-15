@@ -103,6 +103,15 @@ body {
 .elevation-labels { display: flex; justify-content: space-between; gap: .3rem; font-size: 10px; margin-top: .3rem; }
 
 #science-map-controls { display: grid; gap: .5rem; margin: .75rem 0 0; min-width: 0; }
+#mission-environment { margin-top: .8rem; }
+.mission-environment-controls { display: grid; gap: .5rem; padding-top: .6rem; }
+#mission-environment [hidden] { display: none; }
+#mission-environment p { margin: .2rem 0; }
+#mission-environment a { color: #bad8ec; }
+#terrain-panel input[type="number"], #terrain-panel input[type="date"] {
+    box-sizing: border-box; width: 100%; padding: .55rem; color: inherit;
+    background: #2e211b; border: 1px solid #896952; border-radius: .25rem;
+}
 #science-map-controls [hidden] { display: none; }
 .scientific-map-panel { display: grid; gap: .55rem; min-width: 0; }
 .scientific-map-panel p { margin: .15rem 0; }

@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "quantity": "Pancam atmospheric opacity",
+  "wavelengthNm": 440,
+  "fields": [
+    "productId",
+    "sol",
+    "localTimeSol",
+    "solarLongitude",
+    "opacity",
+    "relativeError",
+    "utc"
+  ],
+  "products": [
+    {
+      "schemaVersion": 1,
+      "id": "spirit",
+      "wavelengthNm": 440,
+      "fields": [
+        "productId",
+        "sol",
+        "localTimeSol",
+        "solarLongitude",
+        "opacity",
+        "relativeError",
+        "utc"
+      ],
+      "lidvid": "urn:nasa:pds:mer_pancam_derived_opacity:data:2tau440_2209_20110214a::1.0",
+      "sourceUrl": "https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/data/2tau440_2209_20110214a.tab",
+      "labelUrl": "https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/data/2tau440_2209_20110214a.xml",
+      "sourceSha256": "c4e02b15b801557ec438903f92b30235f1714536b117d21ba2c205aeeb0d7cc9",
+      "labelSha256": "e36909e2cc9369dc3c13c698bc1bb1ae1dc2fbdbf6439c1d3ae5eb90e12654cd",
+      "sourceRecords": 4391,
+      "excludedNonMeasurements": 0,
+      "validRecords": 4391,
+      "utcUnavailableRecords": 0,
+      "firstSol": 2,
+      "lastSol": 2209,
+      "solConvention": "ceil(NASA local_time); noon of Sol 2 is 1.5",
+      "position": null,
+      "timeConversion": {
+        "method": "SPICE scs2e / et2utc; integer product-ID SCLK, partition 1, fraction 0",
+        "precision": "Approximate clock-derived UTC; subsecond timing absent. Archive endpoints differ by 1\u20136 s.",
+        "spiceypyVersion": "8.4.0",
+        "spacecraft": -254,
+        "sclkUrl": "https://naif.jpl.nasa.gov/pub/naif/MER/kernels/sclk/mer2.tsc",
+        "sclkSha256": "b377ee31edfd7a21a53e3c23a610e4b1a8bf938ad670e411cf4202172f9d24f8",
+        "leapSecondsUrl": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls",
+        "leapSecondsSha256": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+        "applicableStart": "2000-01-01T11:58:55.816Z",
+        "applicableStop": "2011-01-01T00:00:00.000Z"
+      },
+      "absoluteCalibrationErrorAtAirmass1": 0.03,
+      "file": "spirit.json",
+      "sha256": "bfb99df0fc07e9e1c0b8bd1dd78ec02e5ff3578aec07775effba1aa94925e563"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "opportunity",
+      "wavelengthNm": 440,
+      "fields": [
+        "productId",
+        "sol",
+        "localTimeSol",
+        "solarLongitude",
+        "opacity",
+        "relativeError",
+        "utc"
+      ],
+      "lidvid": "urn:nasa:pds:mer_pancam_derived_opacity:data:1tau440_5106_20181207a::1.0",
+      "sourceUrl": "https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/data/1tau440_5106_20181207a.tab",
+      "labelUrl": "https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/data/1tau440_5106_20181207a.xml",
+      "sourceSha256": "f874a6590ba69b56fc642cf6a48eaf78b74f0b142a8c4a46ba45a5eb6481fe4c",
+      "labelSha256": "172e828feeca38a1a226be9b71ae8a35866b75d3630882ebea2fed8e59da6922",
+      "sourceRecords": 8697,
+      "excludedNonMeasurements": 0,
+      "validRecords": 8697,
+      "utcUnavailableRecords": 408,
+      "firstSol": 2,
+      "lastSol": 5106,
+      "solConvention": "ceil(NASA local_time); noon of Sol 2 is 1.5",
+      "position": null,
+      "timeConversion": {
+        "method": "SPICE scs2e / et2utc; integer product-ID SCLK, partition 1, fraction 0",
+        "precision": "Approximate clock-derived UTC; subsecond timing absent. Archive endpoints differ by 1\u20136 s.",
+        "spiceypyVersion": "8.4.0",
+        "spacecraft": -253,
+        "sclkUrl": "https://naif.jpl.nasa.gov/pub/naif/MER/kernels/sclk/mer1.tsc",
+        "sclkSha256": "c069246bbeb09e8899bb870a23fcbd9e338bf6f6c1d81905a9db80333a7acc2e",
+        "leapSecondsUrl": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls",
+        "leapSecondsSha256": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+        "applicableStart": "2000-01-01T11:58:55.816Z",
+        "applicableStop": "2017-03-28T23:31:43.672Z"
+      },
+      "absoluteCalibrationErrorAtAirmass1": 0.03,
+      "file": "opportunity.json",
+      "sha256": "a16c4fff0c4d506621375ee9224b686ab68130ca71e76dfd03f8423e5080d29d"
+    }
+  ]
+}
