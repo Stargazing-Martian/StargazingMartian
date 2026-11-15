@@ -1,3 +1,4 @@
+import { facingTest } from '../mars/surface-point.js?v=2';
 import { createSurfacePath } from '../routes/surface-path.js?v=1';
 const Cesium = globalThis.Cesium;
 
@@ -102,7 +103,7 @@ export function createCorridorLayer(viewer, ellipsoid, data) {
         ?? Cesium.SceneTransforms.wgs84ToWindowCoordinates;
     const screen = new Cesium.Cartesian2();
     viewer.scene.postRender.addEventListener(() => {
-        const occluder = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC);
+        const occluder = { isPointVisible: facingTest(viewer, ellipsoid) };
         for (const marker of markers) {
             const onScreen = visible && occluder.isPointVisible(marker.position)
                 && toWindow(viewer.scene, marker.position, screen);
@@ -129,7 +130,7 @@ export function createCorridorLayer(viewer, ellipsoid, data) {
         // Screen-space hit test, as for rover routes. Returns a corridor id.
         hitTest(windowPosition, tolerancePx) {
             if (!visible) return undefined;
-            const occluder = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC);
+            const occluder = { isPointVisible: facingTest(viewer, ellipsoid) };
             let best, bestDistance = tolerancePx;
             for (const [id, c] of corridors) {
                 let previous;

@@ -1,3 +1,4 @@
+import { surfacePoint, facingTest } from '../mars/surface-point.js?v=2';
 const Cesium = globalThis.Cesium;
 
 // START / END dots at both ends of every visible route. HTML overlay (like
@@ -18,7 +19,8 @@ export function createRouteEndpoints(viewer, ellipsoid, routes, missionIds) {
                 + `<span class="route-endpoint__label">${kind.toUpperCase()}</span>`;
             element.hidden = true;
             layer.appendChild(element);
-            items.push({ id, element, position });
+            items.push({ id, element, position: Cesium.Cartesian3.clone(position),
+                cartographic: Cesium.Cartographic.fromCartesian(position, ellipsoid) });
         }
     }
 
@@ -27,8 +29,9 @@ export function createRouteEndpoints(viewer, ellipsoid, routes, missionIds) {
     const screen = new Cesium.Cartesian2();
 
     viewer.scene.postRender.addEventListener(() => {
-        const occluder = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC);
+        const occluder = { isPointVisible: facingTest(viewer, ellipsoid) };
         for (const item of items) {
+            if (routes.isShown(item.id)) surfacePoint(viewer, ellipsoid, item.cartographic, item.position);
             const onScreen = routes.isShown(item.id)
                 && occluder.isPointVisible(item.position)
                 && toWindow(viewer.scene, item.position, screen);

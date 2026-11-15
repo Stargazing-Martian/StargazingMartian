@@ -13,16 +13,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=37">
+    <link rel="stylesheet" href="style.css?v=42">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
-<body>
+<body class="is-loading">
 
     <div id="app">
 
         <div id="mars-globe"></div>
 
+        <!-- Loading skeleton: shown until the globe and the app are ready. -->
+        <div id="loading-screen" aria-hidden="true">
+            <div class="skeleton-planet"></div>
+            <div class="skeleton-panel">
+                <span class="skeleton-line" style="width: 38%"></span>
+                <span class="skeleton-line skeleton-line--title"></span>
+                <span class="skeleton-line" style="width: 72%"></span>
+            </div>
+            <p class="loading-label" role="status">Loading Mars<span>…</span></p>
+        </div>
+        <button id="about-open" type="button" aria-haspopup="dialog" aria-controls="about-dialog">About</button>
         <a id="site-logo" href="./" aria-label="Stargazing Martian — home">
             <svg class="logo-mark" viewBox="0 0 400 400" aria-hidden="true">
                 <g transform="matrix(1,0,0,1,-14186.592124,-2649.613729)"><g transform="matrix(1,0,0,1,-25,0)"><g transform="matrix(0.829065,0,0,0.827818,6197.022657,1987.359603)">
@@ -32,6 +43,14 @@
             <svg class="logo-word" viewBox="0 0 287 23" aria-hidden="true">
                 <path d="M4.30346e-05 22.4V-7.62939e-06H14.816L19.84 9.69599L24.864 -7.62939e-06H39.68V22.4H30.08V8.63999L30.048 8.73599L22.944 22.4H16.736L9.63204 8.73599L9.60004 8.63999V22.4H4.30346e-05ZM41.3583 22.4L55.3423 -7.62939e-06H67.0863L81.0383 22.4H70.3823L68.4623 18.912H54.0303L52.0143 22.4H41.3583ZM58.2863 11.488L57.1983 13.408H65.4223L64.3663 11.488L61.7103 6.04799H61.0703L58.2863 11.488ZM82.6875 22.4V-7.62939e-06H114.592C116.874 -7.62939e-06 118.624 0.511992 119.84 1.53599C121.056 2.53866 121.664 3.92533 121.664 5.69599C121.664 7.06133 121.248 8.17066 120.416 9.02399C119.584 9.87733 118.282 10.464 116.512 10.784V11.424C118.453 11.5947 119.914 12.1493 120.896 13.088C121.877 14.0053 122.368 15.2 122.368 16.672V22.4H112V16.992C112 16.608 111.882 16.2987 111.648 16.064C111.413 15.8293 111.093 15.712 110.688 15.712H92.6075V22.4H82.6875ZM92.6075 9.63199H110.048C110.453 9.63199 110.773 9.50399 111.008 9.24799C111.242 8.99199 111.36 8.65066 111.36 8.22399C111.36 7.75466 111.232 7.40266 110.976 7.16799C110.72 6.93333 110.41 6.81599 110.048 6.81599H92.6075V9.63199ZM138.254 22.4V7.42399H123.374V-7.62939e-06H163.054V7.42399H148.174V22.4H138.254ZM164.895 22.4V14.976H179.775V7.42399H164.895V-7.62939e-06H204.575V7.42399H189.695V14.976H204.575V22.4H164.895ZM205.577 22.4L219.561 -7.62939e-06H231.305L245.257 22.4H234.601L232.681 18.912H218.249L216.233 22.4H205.577ZM222.505 11.488L221.417 13.408H229.641L228.585 11.488L225.929 6.04799H225.289L222.505 11.488ZM246.906 22.4V-7.62939e-06H256.698L276.666 12.352V-7.62939e-06H286.586V22.4H276.794L256.826 10.048V22.4H246.906Z"/>
             </svg>
+        </a>
+        <!-- Official NASA Space Apps 2026 logo (unmodified, "Color and White"
+             colourway) on a solid Deep Blue tile, never over busy imagery, with
+             clear space around it: spaceappschallenge.org/brand -->
+        <a id="space-apps-badge" href="https://www.spaceappschallenge.org/" target="_blank" rel="noopener noreferrer"
+           aria-label="Made for the NASA Space Apps Challenge 2026">
+            <span>Made for</span>
+            <img src="assets/brand/space-apps-logo-color-white.svg" alt="NASA Space Apps Challenge" width="561" height="221">
         </a>
         <button id="explore-hint" type="button" aria-label="Start exploring">
             <span>Scroll to explore</span>
@@ -71,6 +90,61 @@
 
         </div>
 
+    </div>
+    <div id="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" hidden>
+        <article class="about-card mission-panel">
+            <header>
+                <p class="eyebrow">NASA Space Apps Challenge 2026</p>
+                <button class="close" type="button" data-about-close aria-label="Close">×</button>
+            </header>
+            <h2 id="about-title">Stargazing Martian</h2>
+            <p class="place">A layered Mars atlas for planning a Mars-walk.</p>
+            <p>Robots have already walked Mars for us. Stargazing Martian turns their real
+                journeys into a map an astronaut can plan with: every rover traverse NASA has
+                published, split into science phases and scored for how hard it would be on foot,
+                next to orbital science layers and a planet-wide network of expedition corridors.</p>
+
+            <h3>How to use it</h3>
+            <ul class="reasons">
+                <li>Scroll to leave the showcase and explore the globe.</li>
+                <li>Click a pin for the mission card, photos and 360° panoramas.</li>
+                <li><b>Explore route</b> lists the route's segments, coloured green, orange or red by
+                    walking difficulty; hover or click them on the map or in the list.</li>
+                <li>Grey roads are expedition corridors between destinations; hover to see their
+                    difficulty, click for distance, climb, slope and temperature.</li>
+                <li><b>Map mode</b> switches between terrain, topography, dust, radiation and
+                    temperature.</li>
+            </ul>
+
+            <h3>How it works</h3>
+            <p>Route difficulty uses the rover's own tilt where it was logged (Curiosity,
+                Perseverance) and mission-record notes where it was not (Spirit, Opportunity).
+                Corridors are least-cost paths over MOLA slope and roughness, TES daytime
+                temperature and a radiation-shielding proxy.</p>
+            <p class="note">These are planning aids, not verified safe routes: orbital data cannot
+                see boulders, small craters or cliffs, and rover tilt is only a proxy for slope.</p>
+
+            <h3>NASA data</h3>
+            <ul class="about-links">
+                <li><a href="https://mars.nasa.gov/maps/" target="_blank" rel="noopener noreferrer">NASA MMGIS rover traverses and waypoints (Perseverance, Curiosity, Ingenuity)</a></li>
+                <li><a href="https://an.rsl.wustl.edu/mera/AN/pages/mer/mer_traverse.htm" target="_blank" rel="noopener noreferrer">PDS MER Analyst's Notebook traverses (Spirit, Opportunity)</a></li>
+                <li><a href="https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/" target="_blank" rel="noopener noreferrer">MGS MOLA MEGDR global topography</a></li>
+                <li><a href="https://doi.org/10.17189/kwez-jq47" target="_blank" rel="noopener noreferrer">MGS TES dust and surface temperature (NASA PDS)</a></li>
+                <li><a href="https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/" target="_blank" rel="noopener noreferrer">MER Pancam atmospheric opacity</a></li>
+                <li><a href="https://trek.nasa.gov/mars/" target="_blank" rel="noopener noreferrer">NASA Mars Trek imagery (Viking, CTX)</a></li>
+                <li><a href="https://images.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Image and Video Library (photos and panoramas)</a></li>
+                <li><a href="https://doi.org/10.1029/2009SW000564" target="_blank" rel="noopener noreferrer">NASA/JSC HZETRN study (radiation proxy)</a></li>
+            </ul>
+
+            <h3>Other tools</h3>
+            <p class="note">CesiumJS, Pannellum, NumPy, scikit-image, Instrument Sans and JetBrains Mono
+                (Google Fonts).</p>
+
+            <h3>Use of AI</h3>
+            <p class="note">Much of the code and some of the text were written with an AI assistant
+                (Anthropic's Claude), directed and reviewed by the team. No AI-generated images,
+                video or audio are used: every photo is NASA's own, credited in the viewer.</p>
+        </article>
     </div>
     <aside id="terrain-panel" class="mission-panel map-panel" aria-label="Mars map settings">
         <h2>Map mode</h2>
@@ -187,7 +261,7 @@
         <div id="elevation-legend" hidden>
             <div class="elevation-ramp"></div>
             <div class="elevation-labels"><span>−8 km</span><span>Source DEM height</span><span>+22 km</span></div>
-            <p id="relief-scale-note" class="science-notes">Relief shown at 5× height; colours use source DEM metres.</p>
+            <p id="relief-scale-note" class="science-notes">Relief shown at 1× height; colours use source DEM metres.</p>
         </div>
         <details id="map-more" class="map-more">
             <summary>More options</summary>
@@ -202,8 +276,8 @@
                 <label><input type="checkbox" id="topography"> Topographic mode</label>
                 <label for="relief-scale">Height scale</label>
                 <select id="relief-scale">
-                    <option value="1">1× — true height</option>
-                    <option value="5" selected>5× — relief view</option>
+                    <option value="1" selected>1× — true height</option>
+                    <option value="5">5× — relief view</option>
                 </select>
             </fieldset>
             <details id="mission-environment">
@@ -255,7 +329,7 @@
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
     <script src="site-config.js?v=1"></script>
-    <script type="module" src="app.js?v=49"></script>
+    <script type="module" src="app.js?v=57"></script>
 </body>
 
 </html>

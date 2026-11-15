@@ -1,23 +1,39 @@
 import { createSurfaceImagery } from '../nasa/nasa-layers.js?v=2';
 import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, terrainTimeoutMs } from './config.js?v=7';
-import { createTerrainControls } from '../ui/terrain-controls.js?v=10';
+import { createTerrainControls } from '../ui/terrain-controls.js?v=11';
 import { createMissionEnvironment } from '../ui/mission-environment.js?v=2';
-import { createScienceMaps } from '../science/science-map.js?v=4';
+import { createScienceMaps } from '../science/science-map.js?v=5';
 import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=7';
 import { createMarsSkybox } from './mars-skybox.js';
 import { MISSIONS } from '../missions/mission-data.js?v=12';
-import { createMissionPins } from '../missions/mission-pins.js?v=11';
+import { createMissionPins } from '../missions/mission-pins.js?v=13';
 import { createMissionSelection } from '../missions/mission-selection.js?v=27';
-import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=27';
-import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
+import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=30';
+import { createRouteEndpoints } from '../routes/route-endpoints.js?v=3';
 import { createMissionPanel } from '../ui/mission-panel.js?v=6';
 import { createPhotoViewer } from '../ui/photo-viewer.js?v=5';
-import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=4';
+import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=5';
 import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
+import { createAbout } from '../ui/about.js?v=1';
+
+// While the globe and the app load, a skeleton screen is shown and
+// exploring is held back: the scroll that would start it is swallowed.
+const isLoading = () => document.body.classList.contains('is-loading');
+window.addEventListener('wheel', event => {
+    if (isLoading()) { event.preventDefault(); event.stopImmediatePropagation(); }
+}, { capture: true, passive: false });
+createAbout();
 
 (async () => {
     const container = document.getElementById("mars-globe");
+    let appReady = false;
+    // Loaded = first surface tiles on screen and every layer wired up.
+    const finishLoading = () => {
+        if (!appReady || !container.dataset.surfaceReady || !isLoading()) return;
+        document.body.classList.remove('is-loading');
+        document.getElementById('loading-screen').setAttribute('aria-busy', 'false');
+    };
     const routeData = loadRoutes(MISSIONS); // fetch while the viewer starts
     const corridorData = loadCorridors()
         .catch(error => { console.error('Corridors could not be loaded', error); return undefined; });
@@ -92,7 +108,9 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     onEnterInteractive(() => pins.enable());
     // The logo is large on the showcase and shrinks into the corner for exploring.
     onEnterInteractive(() => document.body.classList.add('is-exploring'));
-    document.getElementById('explore-hint').addEventListener('click', () => enterInteractiveMode());
+    document.getElementById('explore-hint').addEventListener('click', () => {
+        if (!isLoading()) enterInteractiveMode();
+    });
 
     // Stage 3: routes appear when zoomed close or when their pin is selected.
     const routes = createRouteLayer(viewer, ellipsoid, await routeData);
@@ -116,6 +134,39 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     const status       = document.getElementById('terrain-status');
 
     selection.onChange(({ mission }) => environment.selectMission(mission));
+    // The globe opens at true height (1x). Selecting a site or route switches
+    // to 5x relief so the local terrain reads; leaving the selection goes back.
+    const reliefScale = document.getElementById('relief-scale');
+    // 5x is exaggerated around the selected site's own ground height, not
+    // around 0 m: in deep craters (Gale, Jezero) 0 m-based relief lifts the
+    // drawn ground kilometres away from the real one, and wheel-zoom (which
+    // aims at the real ground) then slides the view off the route.
+    // Ground height of each rover site in source metres, from its prepared
+    // route (the tiles there may not be loaded yet when a pin is clicked).
+    const siteHeights = new Map([...(await routeData)].map(([id, data]) => [id, data.render?.points?.[0]?.[2]]));
+    let reliefMission;
+    selection.onChange(({ mission }) => {
+        if (mission === reliefMission) return;
+        reliefMission = mission;
+        let relative = 0;
+        if (mission && Number.isFinite(siteHeights.get(mission.id))) {
+            relative = siteHeights.get(mission.id);
+        } else if (mission) {
+            const site = Cesium.Cartographic.fromDegrees(mission.lon, mission.lat);
+            const scale = viewer.scene.verticalExaggeration;
+            const shown = viewer.scene.globe.getHeight(site);
+            if (Number.isFinite(shown)) {
+                const base = viewer.scene.verticalExaggerationRelativeHeight;
+                relative = (shown - base) / scale + base; // back to source metres
+            }
+        }
+        viewer.scene.verticalExaggerationRelativeHeight = relative;
+        const scale = mission ? '5' : '1';
+        if (reliefScale.value !== scale) {
+            reliefScale.value = scale;
+            reliefScale.dispatchEvent(new Event('change', { bubbles: true }));
+        } else viewer.scene.requestRender();
+    });
 
     let generation = 0;
     let removeProviderError;
@@ -217,7 +268,7 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     // Do not expose an empty dark globe while its first surface tiles arrive.
     // Show it once the imagery tiles are in, or after 3 s at the latest;
     // never wait for the 3D terrain download (tens of MB on a slow link).
-    const reveal = () => { container.dataset.surfaceReady = 'true'; revealSurface(); };
+    const reveal = () => { container.dataset.surfaceReady = 'true'; revealSurface(); finishLoading(); };
     const revealSurface = viewer.scene.postRender.addEventListener(() => {
         if (viewer.scene.globe.tilesLoaded) reveal();
     });
@@ -230,6 +281,8 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     // Enabled on every host, including GitHub Pages. The source lives in site-config.js.
     // Deferred: the showcase is a far view where relief is invisible, so the
     // heavy terrain tiles start when exploring begins (or after 5 s idle).
+    appReady = true;
+    finishLoading();
     let terrainStarted = false;
     const startTerrain = () => { if (!terrainStarted) { terrainStarted = true; void loadTerrain(); } };
     onEnterInteractive(startTerrain);
