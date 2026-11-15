@@ -1099,3 +1099,15 @@ body:not(.is-exploring) #terrain-panel { display: none; }
     .scientific-map-panel:not([hidden]), #elevation-legend:not([hidden]),
     #site-logo, .is-exploring #terrain-panel { animation: none; }
 }
+
+/* Five map modes in one row. */
+.map-modes { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+#terrain-panel.map-panel .map-mode { font-size: 9.5px; letter-spacing: 0; }
+.map-mode img { aspect-ratio: 1.1; }
+/* Radiation mode text, same as the other modes. */
+#radiation-status { font: 500 11px/1.4 var(--font-mono); color: var(--muted); }
+#terrain-panel.map-panel label:has(input[type="checkbox"]) {
+    display: flex; gap: 8px; align-items: flex-start;
+    font: 500 13px/1.35 var(--font-sans); letter-spacing: 0; text-transform: none; color: var(--ink);
+}
+#terrain-panel.map-panel label:has(#topography) { display: none; }
