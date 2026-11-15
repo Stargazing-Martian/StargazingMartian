@@ -88,6 +88,7 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     onEnterInteractive(() => pins.enable());
     // The logo is large on the showcase and shrinks into the corner for exploring.
     onEnterInteractive(() => document.body.classList.add('is-exploring'));
+    document.getElementById('explore-hint').addEventListener('click', () => enterInteractiveMode());
 
     // Stage 3: routes appear when zoomed close or when their pin is selected.
     const routes = createRouteLayer(viewer, ellipsoid, await routeData);
