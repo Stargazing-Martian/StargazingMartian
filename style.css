@@ -1261,3 +1261,27 @@ body:not(.is-exploring) #terrain-panel { display: none; }
    package), so the ion logo is not required. The data-attribution credits
    stay visible. */
 .cesium-credit-logoContainer { display: none !important; }
+
+/* "Night light" for the planet itself (canvas only, never the UI): a warm,
+   slightly deeper amber grade with a soft vignette. Applied only to the plain
+   surface views so the data colours of the science maps stay true. */
+#mars-globe .cesium-widget canvas {
+    transition: opacity .8s ease, filter .6s ease;
+}
+body:not([data-map-mode]) #mars-globe .cesium-widget canvas,
+body[data-map-mode="surface"] #mars-globe .cesium-widget canvas {
+    filter: sepia(.22) saturate(1.18) hue-rotate(-6deg) contrast(1.05) brightness(.94);
+}
+#mars-globe::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 55% 55%, transparent 55%, rgb(20 8 2 / .38) 100%);
+    transition: opacity .6s ease;
+}
+body[data-map-mode]:not([data-map-mode="surface"]) #mars-globe::after { opacity: 0; }
+
+/* No Cesium badges on screen: data credits live in About and the README. */
+.cesium-viewer-bottom,
+.cesium-viewer-fullscreenContainer { display: none !important; }

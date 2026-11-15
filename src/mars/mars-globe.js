@@ -14,7 +14,7 @@ import { createRouteEndpoints } from '../routes/route-endpoints.js?v=3';
 import { createMissionPanel } from '../ui/mission-panel.js?v=6';
 import { createPhotoViewer } from '../ui/photo-viewer.js?v=5';
 import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=5';
-import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
+import { createMapModePicker } from '../ui/map-mode-picker.js?v=3';
 import { createAbout } from '../ui/about.js?v=1';
 
 // While the globe and the app load, a skeleton screen is shown and
