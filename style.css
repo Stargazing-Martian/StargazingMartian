@@ -579,3 +579,42 @@ body {
 .photo-viewer:not([data-type="pano"]) .photo-viewer__hint { display: none; }
 @keyframes peek-fade { from { opacity: 0; } }
 @keyframes peek-in { from { opacity: 0; transform: scale(.94) translateY(8px); } }
+
+/* Expedition network: destination markers (mission sites use pins). */
+.network-nodes {
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+    overflow: hidden;
+}
+.network-node {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    will-change: transform;
+}
+.network-node[hidden] { display: none; }
+.network-node__dot {
+    position: absolute;
+    left: -5px;
+    top: -5px;
+    width: 10px;
+    height: 10px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: #f6f1ea;
+    border: 2px solid #1b1410;
+}
+.network-node__label {
+    position: absolute;
+    left: 9px;
+    top: -8px;
+    white-space: nowrap;
+    font: 600 12px/16px var(--font-sans);
+    color: #f6f1ea;
+    text-shadow: 0 0 3px #000, 0 0 6px #000, 0 1px 2px #000;
+}
+.mission-panel[data-view="corridor"] .stats { grid-template-columns: repeat(3, 1fr); }
