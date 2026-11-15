@@ -96,6 +96,21 @@ body {
 .elevation-ramp { height: 9px; background: linear-gradient(to right,#172b70,#398db0 20%,#83b5a2 35%,#d4c17d 50%,#b97444 70%,#974839 85%,#fff0dc); }
 .elevation-labels { display: flex; justify-content: space-between; gap: .3rem; font-size: 10px; margin-top: .3rem; }
 
+#science-map-controls { display: grid; gap: .5rem; margin: .75rem 0 0; min-width: 0; }
+#science-map-controls [hidden] { display: none; }
+#dust-map-panel { display: grid; gap: .55rem; min-width: 0; }
+#dust-map-panel p { margin: .15rem 0; }
+.science-badge { color: #b6d4e3; font-size: 11px; }
+#dust-map-status[data-state="ready"] { color: #b8dba4; }
+#dust-map-status[data-state="error"] { color: #ffc1a0; }
+#dust-map-period, .science-notes { font-size: 11px; color: #d0c7bd; }
+#dust-map-ramp { height: 10px; border-radius: 2px; }
+#dust-map-legend { padding: .6rem; background: #121c24; border-radius: .25rem; font-size: 11px; }
+.dust-missing-key { display: inline-block; width: 10px; height: 10px; background: rgb(170,177,185); }
+#dust-map-reading { white-space: pre-line; color: #d5e1dc; font-size: 12px; }
+.science-notes a { color: #bad8ec; }
+#dust-map-id { display: block; overflow-wrap: anywhere; margin-top: .4rem; }
+
 /* Mission pins: HTML overlay above the globe, Google Maps style */
 .pin-layer {
     position: fixed;

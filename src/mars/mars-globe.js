@@ -1,6 +1,7 @@
 import { createVikingImagery } from '../nasa/nasa-layers.js';
 import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, saveTerrainUrl, terrainTimeoutMs } from './config.js?v=5';
-import { createTerrainControls } from '../ui/terrain-controls.js?v=6';
+import { createTerrainControls } from '../ui/terrain-controls.js?v=7';
+import { createDustMap } from '../science/dust-map.js?v=2';
 import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=6';
 import { createMarsSkybox } from './mars-skybox.js';
@@ -76,6 +77,7 @@ import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
 
     const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));
     const controls = createTerrainControls(viewer, imagery, enterInteractiveMode, ellipsoid);
+    createDustMap(viewer, ellipsoid, controls);
     const address      = document.getElementById('terrain-url');
     const errorMessage = document.getElementById('terrain-error');
     const connection   = document.getElementById('terrain-connection');

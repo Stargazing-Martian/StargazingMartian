@@ -10,7 +10,7 @@
     <link rel="stylesheet"
     href="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Widgets/widgets.css">
 
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=12">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -83,9 +83,47 @@
             <div class="elevation-labels"><span>−8 km</span><span>Kaynak DEM yüksekliği</span><span>+22 km</span></div>
         </div>
         <p id="terrain-reading" role="status" aria-live="polite"></p>
+        <fieldset id="science-map-controls">
+            <legend>Bilimsel harita</legend>
+            <label for="science-map-mode">Harita modu</label>
+            <select id="science-map-mode">
+                <option value="surface">Yüzey ve arazi</option>
+                <option value="dust">Atmosferik toz · NASA TES</option>
+            </select>
+            <div id="dust-map-panel" hidden>
+                <p class="science-badge">Tarihsel gözlem · bölgesel atmosfer · 6° × 3°</p>
+                <label for="dust-map-product">Arşivden seçilmiş gözlem dönemi</label>
+                <select id="dust-map-product" disabled aria-describedby="dust-map-period"></select>
+                <p id="dust-map-status" role="status" aria-live="polite"></p>
+                <button id="dust-map-retry" type="button" hidden>Veriyi yeniden yükle</button>
+                <p id="dust-map-period"></p>
+                <div id="dust-map-legend" aria-label="Toz optik derinliği renk ölçeği">
+                    <div id="dust-map-ramp"></div>
+                    <div class="elevation-labels"><span>0</span><span>1,5</span><span>≥3</span></div>
+                    <p>τ₆₁₀ · 9,3 μm soğurma optik derinliği<br>610 Pa referans basıncı · boyutsuz</p>
+                    <span class="dust-missing-key"></span> Gri: veri yok
+                </div>
+                <button id="dust-map-sample" type="button" disabled>Merkezdeki bölgenin değerini oku</button>
+                <p id="dust-map-reading" role="status" aria-live="polite"></p>
+                <details class="science-notes">
+                    <summary>Kaynak ve bilimsel sınırlar</summary>
+                    <p>11 örnek dönem sunulur; arşivin tamamı veya kesintisiz günlük seri değildir.
+                        Grid aralığı 6° × 3°; yakınlaştırmak yeni ölçüm üretmez.
+                        Günlük haritalarda 1–7 sol içindeki gözlemler birleştirilebilir.</p>
+                    <p>Güncel hava tahmini veya roverın yerel sıcaklık/rüzgâr ölçümü değildir.
+                        Seçili rota ile tarih eşleşmesi kurulmaz. Astronotun rota güvenliği için
+                        arazi, yerel çevre ve ekipman sınırları ayrıca değerlendirilmelidir.</p>
+                    <p>Kaynak: NASA MGS/TES · Montabone ve diğerleri (2023), NASA PDS.</p>
+                    <a href="https://doi.org/10.17189/kwez-jq47" target="_blank" rel="noopener noreferrer">Veri kümesi ve DOI</a><br>
+                    <a href="https://atmos.nmsu.edu/PDS/data/PDS4/mgs_tes_atmos_dust-ice/document/user_guide_TES_COD.pdf" target="_blank" rel="noopener noreferrer">Bilimsel kullanıcı kılavuzu</a><br>
+                    <a id="dust-map-source" hidden target="_blank" rel="noopener noreferrer">Seçili NASA sayısal ürünü</a>
+                    <small id="dust-map-id"></small>
+                </details>
+            </div>
+        </fieldset>
     </aside>
     <p id="skybox-error" role="status" hidden>Yıldız haritası yüklenemedi. Sayfayı yenileyerek tekrar deneyin.</p>
-    <script type="module" src="app.js?v=27"></script>
+    <script type="module" src="app.js?v=28"></script>
 </body>
 
 </html>
