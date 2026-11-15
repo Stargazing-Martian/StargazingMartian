@@ -8,9 +8,12 @@ export function createTerrainControls(viewer, imagery, enterInteractiveMode, ell
     let provider;
     let measurement = 0;
     let ramp;
+    let scientificMode = false;
+    let surfaceLighting;
     function updateMaterial() {
-        const enabled = topography.checked && !fieldset.disabled;
-        imagery.show = !enabled;
+        const enabled = topography.checked && !fieldset.disabled && !scientificMode;
+        imagery.show = !enabled && !scientificMode;
+        topography.disabled = scientificMode;
         legend.hidden = !enabled;
         if (enabled && !ramp) {
             const canvas = document.createElement('canvas');
@@ -67,6 +70,15 @@ export function createTerrainControls(viewer, imagery, enterInteractiveMode, ell
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
     return {
+        // A scientific imagery layer owns the colors while active. Preserve the
+        // checkbox and vertical exaggeration so returning restores the surface.
+        setScientificMode(active) {
+            if (active === scientificMode) return;
+            if (active) surfaceLighting = viewer.scene.globe.enableLighting;
+            scientificMode = active;
+            viewer.scene.globe.enableLighting = active ? false : surfaceLighting;
+            updateMaterial();
+        },
         setProvider(value) {
             provider = value;
         },

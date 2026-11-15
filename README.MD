@@ -110,6 +110,54 @@ ve birim metadata'sı açık olmadığından mutlak Mars yarıçapı doğruluğu
 Areoid düzeltmesi uygulanmamıştır. Mevcut terrain üst seviyesi 9, görüntü seviyesi
 7'dir; yakınlaştırmak kaynak çözünürlüğünün ötesinde yeni ayrıntı üretmez.
 
+## Tarihsel atmosferik toz haritası
+
+Arazi panelindeki **Bilimsel harita → Atmosferik toz · NASA TES** seçeneği,
+aynı Mars küresinde ayrı bir bilimsel görünüm açar. **Arşivden seçilmiş gözlem
+dönemi** listesinden 11 NASA PDS ürününden biri seçilebilir. Bunlar örnek
+dönemlerdir; tam arşiv veya kesintisiz günlük hava durumu serisi değildir.
+
+**Merkezdeki bölgenin değerini oku** düğmesi veya yüzeyde **Shift+tıklama**;
+toz optik derinliğini, yayımlanmış belirsizliği, katkı veren gözlem sayısını ve
+zaman penceresini gösterir. Gri alanlarda veri yoktur. Kaynak dosyası, DOI ve
+bilimsel kullanıcı kılavuzu panelden açılabilir.
+
+Grid 6° × 3° bölgesel atmosfer bağlamıdır; roverın yerel sıcaklık/rüzgâr
+ölçümü veya kısa bir EVA rotasının güvenlik değerlendirmesi değildir. Harita
+1–7 sol içindeki gözlemleri birleştirebilir; arayüz gerçek girdi gözlem
+aralığını UTC olarak gösterir. Rota/görev tarihiyle otomatik eşleştirme yapılmaz.
+
+Bilimsel mod açıldığında topografya renkleri ve görsel aydınlatma geçici olarak
+devreden çıkar; **Yüzey ve arazi** seçildiğinde önceki görünüm geri gelir.
+CTOD arazi sağlayıcısı, kamera, rota/pinler ve düşey ölçek korunur. Veri yüklenemezse
+yüzey görünümü ve açıklayıcı hata gösterilir. Statik JSON dosyaları web
+uygulamasıyla birlikte sunulur; ek servis veya canlı NASA erişimi gerekmez.
+
+Kaynaklar, yeniden üretim ve yorum sınırları:
+[NASA TES veri notları](data/science/tes-dust/README.md).
+Kontroller: `node --test tests/*.test.mjs`.
+
+## Yüzey sıcaklığı haritası
+
+**Bilimsel harita → Yüzey sıcaklığı · NASA TES** seçeneği, NASA'nın yayımlanmış
+sayısal `TSURF` gözlemlerinden hesaplanan bir ısı haritasını açar. Ocak,
+Mart–Nisan ve Temmuz–Ağustos 2004 için üç örnek gözlem aralığı sunulur.
+Yalnızca yerel gerçek güneş saati 13:00–15:00 arasındaki ölçümler kullanılır.
+
+**Merkezdeki sıcaklığı oku** veya **Shift+tıklama**, seçilen 6° × 3° hücredeki
+gözlemlerin ortalamasını °C/K olarak; gözlenen aralığı, örnek sayısını,
+yayılımını ve gerçek gözlem zamanlarını gösterir. Yayılım ölçüm hatası değildir.
+Gri alanlarda veri yoktur; bu alanlar doldurulmaz. Bu, hava sıcaklığı, termal
+atalet, günlük en düşük/en yüksek sıcaklık veya güncel hava tahmini değildir.
+
+Toz ve sıcaklık aynı mod yöneticisini kullanır; renkler ve aktif katmanlar
+birbirine karışmaz. CTOD, kamera, pinler ve rotalar korunur. Haritalar NASA
+gözlemlerinden Stargazing tarafından türetilmiştir; rover görev tarihleriyle
+otomatik eşleştirme veya rota güvenliği değerlendirmesi yapılmaz.
+
+Yöntem, kaynaklar ve yeniden üretim:
+[Yüzey sıcaklığı veri notları](data/science/tes-temperature/README.md).
+
 ## Mars arazi üretimi (v3)
 
 Mars yolu yeniden düzenlendi: blok tabanlı raster okuma, bilinear örnekleme,

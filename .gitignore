@@ -12,3 +12,6 @@ ctod/data/*
 .claude/
 # Raw downloads for scripts/build_routes.py
 .cache/
+
+# Python build/test artifacts
+__pycache__/
