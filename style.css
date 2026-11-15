@@ -1252,3 +1252,7 @@ body:not(.is-exploring) #terrain-panel { display: none; }
 @media (prefers-reduced-motion: reduce) {
     .skeleton-planet, .skeleton-line, .loading-label span { animation: none; }
 }
+.about-team { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.about-team li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: .5px solid var(--line); }
+.about-team li:last-child { border-bottom: 0; }
+.about-team span { color: var(--muted); font: 500 11px/1.6 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }

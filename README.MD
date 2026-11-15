@@ -1,223 +1,180 @@
-# Stargazing
+# Stargazing Martian
 
-Cesium tabanlı Mars görünümü. NASA Trek yüzey görüntüsünü, CTOD HRSC/MOLA
-rasterından ürettiği 3B yükseklik geometrisini sağlar.
+**A layered Mars atlas for planning a Mars-walk.**
+Built for the NASA Space Apps Challenge 2026.
 
-## Yıldız arka planı
+**Live site:** <https://stargazing-martian.github.io/StargazingMartian/>
 
-`assets/skybox` içindeki altı Tycho/Hipparcos görseli açılışta ve serbest kamera
-modunda tek Cesium canvas'ında gösterilir. Arka plan CTOD bağlantısı gerektirmez;
-dosyalar modüle göre çözümlendiği için alt dizin altında sunum da desteklenir.
-Yükleme hatasında Mars çalışmaya devam eder ve kullanıcıya uyarı gösterilir.
+Robots have already walked Mars for us. Stargazing Martian turns their real journeys into a map an
+astronaut can plan with. It shows every rover traverse NASA has published, split into science phases
+and scored for how hard each part would be on foot. Around them sit orbital science layers (terrain,
+topography, dust, temperature, radiation shielding) and a planet-wide network of expedition corridors
+between landing sites and science destinations.
 
-Görseller gerçek yıldız kataloğundan türetilmiştir; Mars'tan çekilmiş fotoğraflar
-değildir. IAU 2000 kutup/meridyen modeliyle **yaklaşık Mars yönelimi** uygulanır.
-Bu bir hassas gözlem/efemeris simülasyonu değildir. Kaynak, dosya doğrulaması ve
-astronomik sınırlar: [skybox notları](assets/skybox/README.md).
+---
 
-Yönelim testleri: `node --test tests/mars-orientation.test.mjs`.
+## Features
 
-## GitHub Pages: uygulama ve arazi tek adreste
+- **3D Mars globe** (CesiumJS) with NASA imagery, 3D terrain, and an opening showcase that leads into
+  free exploration.
+- **11 mission sites** for 12 missions: Viking 1 and 2, Mars Pathfinder (Sojourner), Deep Space 2,
+  Spirit, Opportunity, Phoenix, Curiosity, ExoMars Schiaparelli, InSight, and Perseverance (with Ingenuity).
+- **Real rover traverses** for Spirit, Opportunity, Curiosity and Perseverance, drawn from NASA data and
+  split into named science phases.
+- **Walking difficulty per segment**, coloured green, orange or red, with the reasons spelled out.
+- **Mission panel** with a summary, stats, a difficulty profile, a segment list that highlights on the
+  map in both directions, and segment details.
+- **NASA photos and 360° panoramas.** Panoramas open full screen and let you look in every direction.
+  Flat photos open as a quick "peek" card.
+- **Map modes:** Terrain, Topography, Atmospheric dust, Radiation shielding and Surface temperature,
+  each with a preview tile.
+- **Expedition corridors.** 45 least-cost corridors across the whole planet, drawn like a road network.
+  Hover a corridor to see its difficulty; click it for distance, climb, slope, temperature and sols by rover.
+- **Mission and time.** Historical Pancam atmospheric opacity for Spirit and Opportunity, looked up by
+  Sol or by approximate UTC day.
+- **Relief on demand.** The globe opens at true height (1×). Selecting a site or route switches to 5×
+  relief, centred on that site's own ground height.
 
-Yayın adresi: <https://stargazing-martian.github.io/StargazingMartian/>.
-CTOD'un ürettiği gerçek arazi dosyaları `data/terrain/mars/` altında uygulamayla
-birlikte sunulur. Ziyaretçinin Docker veya ayrı bir CTOD servisi açması gerekmez.
-`site-config.js`, bu statik paketi otomatik seçer. Aynı dosyalar basit bir yerel
-HTTP sunucusunda da çalışır:
+## How to use it
+
+1. Scroll, or click **Scroll to explore**, to leave the showcase.
+2. Click a pin to open the mission card, photos and panoramas.
+3. Click **Explore route** to see the route's segments. Hover or click them, in the list or on the map.
+4. Grey lines are expedition corridors. Hover one to see its difficulty, or click it for the details.
+5. Use **Map mode** (bottom-right) to switch layers. **More options** holds terrain status, height
+   scale and the mission/time observations.
+6. **About** (top-right) explains the project, its data and its limits.
+
+## How it works
+
+**Rover routes.** NASA traverse files are converted to longitude, latitude and Sol by
+`scripts/build_routes.py`. Source vertices are kept as published. The display line is smoothed only
+on screen. Routes are split into science phases by Sol range; the boundaries are approximate and come
+from mission campaign summaries.
+
+**Walking difficulty** is scored per segment:
+
+- **Curiosity and Perseverance:** the rover logged its own tilt at every stop, so the score uses the
+  90th-percentile tilt. Below 9° is easy, 9° to 15° is medium, and 15° or more is hard.
+- **Spirit and Opportunity:** these rovers logged no tilt, so the score comes from terrain notes and
+  incidents in the mission record, such as Purgatory, Troy and the Endeavour rim. A note can only raise
+  a level, never lower it.
+
+**Expedition corridors** (`scripts/build_corridors.py`) are least-cost paths over a cost map. The cost
+map is built from:
+
+- NASA MOLA slope and roughness, at about 7.4 km per cell
+- TES daytime surface temperature
+- a radiation-shielding proxy
+
+Polar caps beyond 80° are treated as impassable.
+
+**Science maps** come from NASA TES dust optical depth and TSURF surface temperature, averaged into
+6° × 3° cells. The radiation layer is a Stargazing-derived relative shielding proxy. It uses MOLA heights
+and a published GCR transport table. It is not a NASA dose map.
+
+### Limits
+
+These are planning aids, not verified safe routes. Orbital data cannot see boulders, small craters or
+cliffs. Rover tilt is only a proxy for ground slope. Corridors are coarse expedition scenarios for a
+crewed rover, not walking routes. Science maps are historical regional context, not forecasts.
+
+---
+
+## Run it locally
+
+The site is static: HTML, CSS, ES modules and JSON, with no build step. Serve the repository root over HTTP:
 
 ```sh
-python3 -m http.server 5500
+python3 -m http.server 5173
 ```
 
-<http://localhost:5500> adresini açın. **Topographic mode**, yalnızca yükseklik
-renklerini açıp kapatır; gerçek 3B arazi etkin kalır. Sıcaklık, atmosferik toz,
-görev/Sol/UTC gözlemleri ve yeni görev/fotoğraf paneli aynı yayın altında çalışır.
+Then open <http://localhost:5173>. Opening the files as `file://` will not work.
 
-Paket 1.021 tile ve yaklaşık 322 MiB içerir. Tüm gezegen seviye 4'e, görev
-bölgeleri ve mevcut rover rotaları seviye 9'a kadar kapsanır. Görev bölgelerinin
-dışında daha kaba arazi kullanılır; kaynak DEM'in 200 m çözünürlüğü bütün
-gezegenin her yakınlaştırmada 200 m ayrıntı taşıdığı anlamına gelmez.
-Mesh yoğunluğu düşürülmemiştir. [Paket, kapsama ve yeniden üretim notları](data/terrain/README.md).
+The 3D terrain is a static tile package in `data/terrain/mars/`. It is served with the site, so no
+backend is needed. `site-config.js` points to it.
 
-Kökteki `.nojekyll` korunur; depo kökünden GitHub Pages yayını kullanılabilir.
-`data/terrain/mars/` içindeki bütün tile'lar, `layer.json` ve `export.json` aynı
-commit'te bulunmalıdır. Dosyalar yüklenmeden yalnızca arayüzü yayımlamak yeterli değildir.
+### Tests
 
-## Ayrı sunucuyla geliştirme
+```sh
+node --test tests/
+```
 
-Gerekirse `site-config.js` içindeki `terrainUrl` değerini çalışan servisin
-`/tiles/mars` adresiyle değiştirin. HTTPS yayında HTTPS terrain adresi gerekir.
-`terrainUrl: null`, localhost ve Codespaces'te otomatik CTOD servisini seçer.
-Tarayıcıdaki eski kayıtlı adresler yayın ayarını değiştirmez. URL alanı ve
-elle bağlantı düğmesi son kullanıcı arayüzünden kaldırılmıştır.
+### Rebuilding the data
 
-## Hızlı başlatma (Docker)
+The scripts in `scripts/` regenerate everything in `data/` and `assets/`. Some of them need NumPy and
+scikit-image:
 
-Docker kuruluysa Stargazing ve CTOD'yi tek komutla başlatın:
+```sh
+python3 -m venv .cache/venv
+.cache/venv/bin/pip install numpy scikit-image
+.cache/venv/bin/python scripts/build_corridors.py
+```
+
+| Script | Output |
+|---|---|
+| `build_routes.py` | `data/routes/*.json`: traverses, segments, difficulty |
+| `build_route_surfaces.py` | terrain-aligned display geometry for the routes |
+| `build_corridors.py`, `build_radiation_corridors.py` | `data/network/corridors.json` |
+| `build_dust_maps.py`, `build_temperature_maps.py` | `data/science/tes-*` |
+| `build_mer_weather.py` | Pancam opacity observations |
+| `build_map_previews.py` | `assets/previews/*.png` (map-mode tiles) |
+| `fetch_photos.py` | `assets/photos/`, `data/photos.json` (uses macOS `sips`) |
+| `export_pages_terrain.py` | the static terrain package in `data/terrain/mars/` |
+
+### Terrain backend (optional)
+
+The terrain package was produced with **CTOD**, a Cesium terrain server, from the USGS HRSC/MOLA blended
+DEM (about 200 m per pixel). You only need CTOD to regenerate terrain or to work on the backend:
 
 ```sh
 docker compose up -d --build
 ```
 
-Sonraki açılışlarda yeniden derlemeyin:
+This starts CTOD on port 5000 and the site on <http://localhost:5500>. To use the live server instead of
+the static package, set `terrainUrl: null` in `site-config.js`. For a remote CTOD, the page's origin must
+be allowed through `CTOD_CORS_ALLOW_ORIGINS`. Package coverage: the whole planet to level 4, and mission
+regions to level 9. See [data/terrain/README.md](data/terrain/README.md).
 
-```sh
-docker compose up -d
-```
+---
 
-Durdurmak için `docker compose down` kullanın; önbellek volume'u korunur.
+## Data and resources
 
-Ardından <http://localhost:5500> adresini açın. Statik arazi paketi varsayılandır;
-canlı CTOD geliştirmesi için `site-config.js` içinde `terrainUrl: null` seçin.
-Docker, arazi paketini yeniden üretirken veya backend geliştirmesi yaparken
-kullanılır; normal site ziyaretinde gerekmez. İlk imaj kurulumu Python
-bağımlılıklarını indirir. Yerel DEM yoksa CTOD resmi USGS HRSC/MOLA rasterını
-HTTP aralık istekleriyle okur.
+### NASA data
 
-Yerel DEM için `.env.example` dosyasını `.env` olarak kopyalayıp
-`STARGAZING_DEM_DIR` değerini `MarsHRSCMOLA_MAP2_COG.tif` dosyanızın bulunduğu
-klasöre ayarlayın. Alternatif olarak COG'u `ctod/data/` klasörüne koyun.
-Compose bu klasörü salt okunur `/data` olarak bağlar; CTOD yerel dosyayı
-bulursa USGS ağına ihtiyaç duymadan onu kullanır. Başlangıç logu seçilen kaynağı
-yazar. `.env` ve rasterlar Git'e dahil edilmez.
+- [NASA MMGIS rover traverses and waypoints: Perseverance, Curiosity, Ingenuity](https://mars.nasa.gov/maps/)
+- [PDS MER Analyst's Notebook traverses: Spirit, Opportunity](https://an.rsl.wustl.edu/mera/AN/pages/mer/mer_traverse.htm)
+- [MGS MOLA MEGDR global topography](https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/)
+- [MGS TES dust optical depth and surface temperature (NASA PDS)](https://doi.org/10.17189/kwez-jq47)
+- [MER Pancam atmospheric opacity](https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/)
+- [NASA Mars Trek imagery: Viking, MRO CTX](https://trek.nasa.gov/mars/)
+- [NASA Image and Video Library: photos and panoramas](https://images.nasa.gov/)
+- [NASA/JSC co-authored HZETRN study (radiation proxy)](https://doi.org/10.1029/2009SW000564)
+- [NASA Mars fact sheet (atmosphere assumptions)](https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html)
 
-VS Code'da **Dev Containers** eklentisiyle depoyu açıp **Reopen in Container**
-seçin. GitHub Codespaces'te **Code → Codespaces → Create codespace** ile aynı
-ortamı başlatabilirsiniz; port 5500 önizlemeyi açar.
+### Other data and tools
 
-DEM kaynağı: [USGS Astrogeology](https://astrogeology.usgs.gov/search/map/Mars/Topography/HRSC_MOLA_Blend/Mars_HRSC_MOLA_BlendDEM_Global_200mp_v2).
-HRSC verisi CC BY-SA 3.0 IGO koşullarına tabidir; akademik kullanımda kaynak
-yazarlarını belirtin.
+- [USGS HRSC/MOLA blended DEM](https://astrogeology.usgs.gov/search/map/Mars/Topography/HRSC_MOLA_Blend/Mars_HRSC_MOLA_BlendDEM_Global_200mp_v2): HRSC data under CC BY-SA 3.0 IGO
+- [CesiumJS](https://cesium.com/platform/cesiumjs/), [CTOD](https://github.com/sogelink-research/ctod), [Pannellum](https://pannellum.org/)
+- [NumPy](https://numpy.org/), [scikit-image](https://scikit-image.org/)
+- [Instrument Sans](https://fonts.google.com/specimen/Instrument+Sans), [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) (Google Fonts)
+- Star background: Tycho/Hipparcos-derived sky map; see [assets/skybox/README.md](assets/skybox/README.md)
 
-Yayın kaynağı `site-config.js` dosyasından yönetilir. Varsayılan
-`terrainUrl: "./data/terrain/mars"` aynı site altındaki dosyaları kullanır.
-Dış servis seçilecekse tam HTTPS adresini buraya yazın. Ayar dosyası herkese
-açıktır; anahtar veya parola içermemelidir. `file://` yerine HTTP sunucusu kullanın.
+NASA images are public domain. Each photo is credited in the viewer and links to its source.
+The NASA Space Apps logo is used unaltered, following the
+[Space Apps brand guidelines](https://www.spaceappschallenge.org/brand/).
 
-## CORS
+## Use of AI
 
-CTOD'deki güncel ayar `localhost`, `127.0.0.1` ve `[::1]` originlerini herhangi
-bir portta kabul eder. Harici host/domain kullanıldığında CTOD'ye **Stargazing
-sayfasının origin'i** `--cors-allow-origins` veya `CTOD_CORS_ALLOW_ORIGINS` ile
-verilmelidir. Bu, CTOD'nin kendi adresi değildir. Statik Pages paketinde bütün
-veriler aynı origin'dedir ve CORS ayarı gerekmez.
+Much of the code and some of the text in this project were written with an AI assistant (Anthropic's
+Claude), directed and reviewed by the team. No AI-generated images, video or audio are used. Every
+photo is NASA's own.
 
-Üretimde yerel geliştirme iznini kapatmak için `CTOD_CORS_ALLOW_ORIGIN_REGEX=""`
-kullanın ve izin verilen site originlerini açıkça belirtin. `no-cors` kullanmak
-çözüm değildir: tarayıcı opaque yanıtın yükseklik verisini okuyamaz.
+## Team
 
-## Topografya
+- **Batın Sarı**: Backend
+- **Yunus Emre Zorlu**: Product Design
 
-**3D terrain active** durumu, yalnızca metadata ve örnek terrain tile'larının
-Cesium tarafından okunup yükseklikleri doğrulandığında gösterilir. Eksik veride
-uygulama yüzey görünümüne döner; bilimsel haritalar ve görev gözlemleri çalışır.
+## License
 
-Arazi görünümünde **Topographic mode** anahtarı ve yalnızca **1× / 5×** ölçek seçimi bulunur. Açıkken DEM yüksekliği
-renklerle gösterilir; kapalıyken Viking yüzey dokusu görünür. Her iki durumda
-3B geometri etkindir. 5× kabartı varsayılandır; 1× gerçek ölçeğe geçilebilir. Seçim lejantta belirtilir; renkler
-kaynak metre cinsindendir. Bağlantı formu, 10× seçeneği, Olympus düğmesi
-ve normal tıkla yükseklik okuma kaldırılmıştır; normal tıklar görev/rota
-seçimine ayrılır. Bilimsel haritaların Shift+tıkla sayısal okuması korunur.
-
-Gezegenin tamamına uzaktan bakarken gerçek ölçekte kabartı çok küçük görünür;
-yakın görünüm veya abartılı ölçek kullanın. Globe, terrain ve WMTS aynı
-3396190 m Mars küresini kullanır. Kaynak raster değerleri korunur; düşey datum
-ve birim metadata'sı açık olmadığından mutlak Mars yarıçapı doğruluğu iddia edilmez.
-Areoid düzeltmesi uygulanmamıştır. Mevcut terrain üst seviyesi 9, görüntü seviyesi
-7'dir; yakınlaştırmak kaynak çözünürlüğünün ötesinde yeni ayrıntı üretmez.
-
-## Tarihsel atmosferik toz haritası
-
-Arazi panelindeki **Bilimsel harita → Atmosferik toz · NASA TES** seçeneği,
-aynı Mars küresinde ayrı bir bilimsel görünüm açar. **Arşivden seçilmiş gözlem
-dönemi** listesinden 11 NASA PDS ürününden biri seçilebilir. Bunlar örnek
-dönemlerdir; tam arşiv veya kesintisiz günlük hava durumu serisi değildir.
-
-**Merkezdeki bölgenin değerini oku** düğmesi veya yüzeyde **Shift+tıklama**;
-toz optik derinliğini, yayımlanmış belirsizliği, katkı veren gözlem sayısını ve
-zaman penceresini gösterir. Gri alanlarda veri yoktur. Kaynak dosyası, DOI ve
-bilimsel kullanıcı kılavuzu panelden açılabilir.
-
-Grid 6° × 3° bölgesel atmosfer bağlamıdır; roverın yerel sıcaklık/rüzgâr
-ölçümü veya kısa bir EVA rotasının güvenlik değerlendirmesi değildir. Harita
-1–7 sol içindeki gözlemleri birleştirebilir; arayüz gerçek girdi gözlem
-aralığını UTC olarak gösterir. Rota/görev tarihiyle otomatik eşleştirme yapılmaz.
-
-Bilimsel mod açıldığında topografya renkleri ve görsel aydınlatma geçici olarak
-devreden çıkar; **Yüzey ve arazi** seçildiğinde önceki görünüm geri gelir.
-CTOD arazi sağlayıcısı, kamera, rota/pinler ve 1×/5× düşey ölçek korunur. Veri yüklenemezse
-yüzey görünümü ve açıklayıcı hata gösterilir. Statik JSON dosyaları web
-uygulamasıyla birlikte sunulur; ek servis veya canlı NASA erişimi gerekmez.
-
-Kaynaklar, yeniden üretim ve yorum sınırları:
-[NASA TES veri notları](data/science/tes-dust/README.md).
-Kontroller: `node --test tests/*.test.mjs`.
-
-## Yüzey sıcaklığı haritası
-
-**Bilimsel harita → Yüzey sıcaklığı · NASA TES** seçeneği, NASA'nın yayımlanmış
-sayısal `TSURF` gözlemlerinden hesaplanan bir ısı haritasını açar. Ocak,
-Mart–Nisan ve Temmuz–Ağustos 2004 için üç örnek gözlem aralığı sunulur.
-Yalnızca yerel gerçek güneş saati 13:00–15:00 arasındaki ölçümler kullanılır.
-
-**Merkezdeki sıcaklığı oku** veya **Shift+tıklama**, seçilen 6° × 3° hücredeki
-gözlemlerin ortalamasını °C/K olarak; gözlenen aralığı, örnek sayısını,
-yayılımını ve gerçek gözlem zamanlarını gösterir. Yayılım ölçüm hatası değildir.
-Gri alanlarda veri yoktur; bu alanlar doldurulmaz. Bu, hava sıcaklığı, termal
-atalet, günlük en düşük/en yüksek sıcaklık veya güncel hava tahmini değildir.
-
-Toz ve sıcaklık aynı mod yöneticisini kullanır; renkler ve aktif katmanlar
-birbirine karışmaz. CTOD, kamera, pinler ve rotalar korunur. Haritalar NASA
-gözlemlerinden Stargazing tarafından türetilmiştir; rover görev tarihleriyle
-otomatik eşleştirme veya rota güvenliği değerlendirmesi yapılmaz.
-
-Yöntem, kaynaklar ve yeniden üretim:
-[Yüzey sıcaklığı veri notları](data/science/tes-temperature/README.md).
-
-## Görev ve zamanla çevre gözlemi
-
-Arazi panelindeki **Görev ve zaman · NASA Pancam** bölümünde Spirit veya
-Opportunity ve göreve özel Sol numarası (örnek: **2**) seçilir. Alternatif
-olarak araç saatinden türetilmiş yaklaşık UTC günüyle arama yapılabilir.
-Birden fazla eşleşmede gerçek gözlemler ayrı ayrı seçilebilir. Görev pinine
-tıklamak paneldeki görevi de seçer; panelde tarih değiştirmek kamerayı oynatmaz.
-**Seçili görevin rotasına git** düğmesi mevcut rota görünümünü açar.
-
-Pancam'ın 440 nm atmosfer optik derinliği sunulur. Kaynak göreli hata alanı,
-Sol, Ls, görüntü kimliği ve yaklaşık UTC açıkça gösterilir. Eksik kayıt başka
-görevden veya en yakın günden doldurulmaz. Diğer görevlerde veri eklenmediyse
-panel bunu belirtir. Hava sıcaklığı ve rüzgâr bu kaynakta bulunmaz.
-
-**Harita dönemini bu gözleme bağla** açıkken toz/ısı listesi yalnızca seçili
-UTC gözlemiyle örtüşen örnek dönemleri içerir. Eşleşme yoksa katman kaldırılır
-ve yüzey görünümü korunur. Bu, bölgesel dönem örtüşmesidir; aynı gün roverın
-tam konumunda ölçülen hava durumu değildir. İniş bölgesinin referans hücresi
-ayrıca etiketlenir. Kutuyu kapatarak serbest arşiv taramasına dönülür.
-
-Spirit 4.391, Opportunity 8.697 tarihsel ölçüm içerir. Opportunity'nin 408
-ölçümü NASA saat dosyasının geçerlilik sınırını aştığından yalnızca Sol ile
-gösterilir; UTC ve harita dönemi türetilmez. Veriler web uygulamasıyla birlikte
-sunulur; ek servis veya Docker kurulumu gerektirmez.
-[Kaynaklar, saat dönüşümü ve bilimsel sınırlar](data/science/mer-weather/README.md).
-
-## Mars arazi üretimi (v3)
-
-Mars yolu yeniden düzenlendi: blok tabanlı raster okuma, bilinear örnekleme,
-her seviyede varsayılan 128×128 hücre (16.641 köşe), tek halo üzerinden normal
-hesabı, dört üretim işçisi ve aynı tile için paylaşılan tek üretim işi.
-Kaynak ve ayarlar sürümlü cache kimliğine dahildir. Tile'lar Docker cache
-volume'unda saklanır; yeniden başlatma önbelleği silmez.
-
-Eksik DEM hücreleri aynı kaynağın geçerli overview seviyesinden tamamlanır;
-hiçbir seviyede veri yoksa tile hatası açıkça bildirilir. Derin çukurlar üretilmez.
-Arayüz başarısız tile koordinatını gösterir ve aynı tile başarıyla gelince
-uyarıyı kaldırır. Yüzey görüntüsü hâlâ Viking mozaiğidir; CTOD değişikliği
-fotoğrafın doğal çözünürlüğünü artırmaz.
-
-Ölçümler ve henüz tamamlanmamış kontroller:
-[CTOD yeniden yapılandırma notları](ctod/REBUILD_NOTES.md).
-
-API kaynakları:
-- https://cesium.com/learn/cesiumjs/ref-doc/CesiumTerrainProvider.html
-- https://cesium.com/learn/cesiumjs/ref-doc/Scene.html
-- https://github.com/CesiumGS/quantized-mesh
+[MIT](LICENSE) © 2026 Stargazing Martian
