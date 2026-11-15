@@ -3,7 +3,6 @@ import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, saveTerrainUrl, te
 import { createTerrainControls } from '../ui/terrain-controls.js?v=6';
 import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=6';
-import { createMarsAtmosphere } from './mars-atmosphere.js';
 import { createMarsSkybox } from './mars-skybox.js';
 import { MISSIONS } from '../missions/mission-data.js?v=10';
 import { createMissionPins } from '../missions/mission-pins.js?v=10';
@@ -55,7 +54,6 @@ import { createMockRoute } from '../routes/mock-routes.js?v=21';
         intensity: 1.5
     });
 
-    createMarsAtmosphere(viewer, ellipsoid);
 
     const { enterInteractiveMode, onEnterInteractive } = createMarsCamera(container, viewer);
 
