@@ -10,3 +10,5 @@ ctod/data/*
 
 # Claude Code
 .claude/
+# Raw downloads for scripts/build_routes.py
+.cache/

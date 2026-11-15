@@ -4,14 +4,14 @@ import { createTerrainControls } from '../ui/terrain-controls.js?v=6';
 import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=6';
 import { createMarsSkybox } from './mars-skybox.js';
-import { MISSIONS } from '../missions/mission-data.js?v=10';
+import { MISSIONS } from '../missions/mission-data.js?v=11';
 import { createMissionPins } from '../missions/mission-pins.js?v=10';
 import { createMissionSelection } from '../missions/mission-selection.js?v=22';
-import { createRouteLayer } from '../routes/route-layer.js?v=21';
-import { createMockRoute } from '../routes/mock-routes.js?v=21';
+import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=22';
 
 (async () => {
     const container = document.getElementById("mars-globe");
+    const routeData = loadRoutes(MISSIONS); // fetch while the viewer starts
 
     const ellipsoid = new Cesium.Ellipsoid(MARS_RADIUS, MARS_RADIUS, MARS_RADIUS);
     Cesium.Ellipsoid.default = ellipsoid;
@@ -65,7 +65,7 @@ import { createMockRoute } from '../routes/mock-routes.js?v=21';
     onEnterInteractive(() => pins.enable());
 
     // Stage 3: routes appear when zoomed close or when their pin is selected.
-    const routes = createRouteLayer(viewer, ellipsoid, MISSIONS, createMockRoute);
+    const routes = createRouteLayer(viewer, ellipsoid, await routeData);
     selection = createMissionSelection(viewer, ellipsoid, { pins, routes, missions: MISSIONS });
 
     const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));
