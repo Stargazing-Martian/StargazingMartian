@@ -771,3 +771,7 @@ body {
 .mission-panel .photo { transition: transform .15s ease; }
 .mission-panel .photo:active { transform: scale(.97); }
 .network-node__dot { transition: transform .2s ease; }
+/* Spacing between the side panel's sections (terrain, mission environment, science map). */
+#terrain-panel > fieldset,
+#terrain-panel > details { margin-top: 14px; }
+#mission-environment > summary { cursor: pointer; font-weight: 600; }
