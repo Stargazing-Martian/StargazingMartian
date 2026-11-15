@@ -667,33 +667,47 @@ body {
 }
 .mission-panel[data-view="corridor"] .stats { grid-template-columns: repeat(3, 1fr); }
 
-/* Logo mark, top-left: large on the showcase (stage 1), shrinks into the
-   corner once exploring starts. Light on the dark sky, with a soft shadow so
-   it stays crisp over the bright planet too. */
+/* Logo, top-left. Showcase: large mark with the MARTIAN wordmark centred
+   under it. Exploring: small mark with the wordmark beside it. Positions are
+   animated, so the lock-up glides from one layout to the other. Warm
+   cream-to-apricot gradient instead of flat white; a soft shadow keeps it
+   readable over the bright planet. */
 #site-logo {
+    --mark: 112px;
+    --word: 264px;
     position: fixed;
     top: 40px;
-    left: 48px;
+    left: calc(48px + (var(--word) - var(--mark)) / 2);
     z-index: 30;
     display: block;
-    width: 112px;
-    height: 112px;
-    color: #f6f1ea;
-    filter: drop-shadow(0 2px 14px rgb(0 0 0 / .55));
-    opacity: .96;
+    width: var(--mark);
+    height: var(--mark);
+    filter: drop-shadow(0 2px 14px rgb(0 0 0 / .5));
     transition: top .7s cubic-bezier(.2, .8, .2, 1), left .7s cubic-bezier(.2, .8, .2, 1),
-                width .7s cubic-bezier(.2, .8, .2, 1), height .7s cubic-bezier(.2, .8, .2, 1),
-                opacity .2s ease;
+                width .7s cubic-bezier(.2, .8, .2, 1), height .7s cubic-bezier(.2, .8, .2, 1);
     animation: logo-in 1s ease-out .2s both;
 }
-.is-exploring #site-logo { top: 16px; left: 24px; width: 44px; height: 44px; }
-#site-logo:hover { opacity: 1; }
-#site-logo:focus-visible { outline: 2px solid #4dabff; outline-offset: 4px; border-radius: 8px; }
-#site-logo svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+#site-logo .logo-mark { display: block; width: 100%; height: 100%; }
+#site-logo .logo-word {
+    position: absolute;
+    display: block;
+    width: var(--word);
+    height: calc(var(--word) * 23 / 287);
+    top: calc(100% + 20px);
+    left: calc((var(--mark) - var(--word)) / 2);
+    transition: top .7s cubic-bezier(.2, .8, .2, 1), left .7s cubic-bezier(.2, .8, .2, 1),
+                width .7s cubic-bezier(.2, .8, .2, 1), height .7s cubic-bezier(.2, .8, .2, 1);
+}
+.is-exploring #site-logo { --mark: 40px; --word: 150px; top: 18px; left: 24px; }
+.is-exploring #site-logo .logo-word {
+    top: calc((var(--mark) - var(--word) * 23 / 287) / 2);
+    left: calc(var(--mark) + 14px);
+}
+#site-logo:focus-visible { outline: 2px solid #4dabff; outline-offset: 6px; border-radius: 8px; }
 @keyframes logo-in { from { opacity: 0; transform: translateY(-8px); } }
 @media (max-width: 480px) {
-    #site-logo { top: 20px; left: 20px; width: 72px; height: 72px; }
-    .is-exploring #site-logo { top: 14px; left: 16px; width: 36px; height: 36px; }
+    #site-logo { --mark: 72px; --word: 180px; top: 20px; left: calc(20px + (var(--word) - var(--mark)) / 2); }
+    .is-exploring #site-logo { --mark: 32px; --word: 118px; top: 14px; left: 16px; }
 }
 
 .visually-hidden {
