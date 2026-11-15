@@ -1256,3 +1256,8 @@ body:not(.is-exploring) #terrain-panel { display: none; }
 .about-team li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: .5px solid var(--line); }
 .about-team li:last-child { border-bottom: 0; }
 .about-team span { color: var(--muted); font: 500 11px/1.6 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+
+/* No Cesium ion service is used (imagery: NASA Trek; terrain: our own
+   package), so the ion logo is not required. The data-attribution credits
+   stay visible. */
+.cesium-credit-logoContainer { display: none !important; }
