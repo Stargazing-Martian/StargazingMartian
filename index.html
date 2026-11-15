@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=32">
+    <link rel="stylesheet" href="style.css?v=33">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -68,8 +68,10 @@
         </div>
 
     </div>
-    <aside id="terrain-panel" aria-label="Mars map settings">
-        <h2 class="side-title">Map mode</h2>
+    <aside id="terrain-panel" class="mission-panel map-panel" aria-label="Mars map settings">
+        <header><p class="eyebrow">NASA map layers</p></header>
+        <h2>Map mode</h2>
+        <p class="place">Choose what the globe shows.</p>
         <div class="map-modes" role="radiogroup" aria-label="Map mode">
             <button type="button" class="map-mode" role="radio" data-mode="dust" aria-checked="false">
                 <img src="assets/previews/dust.png" alt="" width="360" height="180">

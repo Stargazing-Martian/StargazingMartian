@@ -895,7 +895,7 @@ body {
 }
 /* Cesium's full-screen button would sit under the panel. */
 .cesium-viewer-fullscreenContainer { display: none; }
-#terrain-panel .side-title { font: 700 26px/1.15 var(--font-sans); margin: 2px 0 14px; }
+#terrain-panel .side-title { font: 600 24px/1.15 var(--font-sans); margin: 2px 0 14px; }
 #terrain-panel p { margin: 0; }
 #terrain-panel label { color: var(--muted); font: 500 10px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
 #terrain-panel select,
@@ -999,3 +999,44 @@ body:not(.is-exploring) #terrain-panel { display: none; }
 /* No pill behind the small logo while exploring. */
 #site-logo::before { display: none; }
 .is-exploring #site-logo svg { filter: drop-shadow(0 1px 6px rgb(0 0 0 / .6)); }
+
+/* ===== Map panel = mission panel ===== 
+   The aside carries the .mission-panel class, so title, eyebrow, subtitle,
+   labels, colours and type come from the same rules. Only the side differs;
+   the older #terrain-panel rules above are reset to the mission panel's values. */
+#terrain-panel.map-panel {
+    left: auto;
+    right: 24px;
+    top: auto;
+    bottom: 24px;
+    z-index: 20;
+    box-sizing: border-box;
+    width: min(360px, calc(100vw - 32px));
+    max-height: calc(100vh - 140px);
+    padding: 18px 20px 20px;
+    color: var(--ink);
+    background: rgb(12 10 9 / .90);
+    border: 0.5px solid rgb(255 255 255 / .15);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgb(0 0 0 / .35);
+    font: 14px/1.45 var(--font-sans);
+}
+#terrain-panel.map-panel .place { margin: 0 0 10px; color: var(--muted); }
+#terrain-panel.map-panel label,
+#terrain-panel.map-panel legend {
+    font: 500 10px/1.3 var(--font-mono);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+#terrain-panel.map-panel .map-mode { font: 500 10.5px/1.2 var(--font-mono); letter-spacing: .02em; }
+#terrain-panel.map-panel .map-more > summary,
+#terrain-panel.map-panel #mission-environment > summary,
+#terrain-panel.map-panel details.science-notes > summary { font: 600 13px/1.3 var(--font-sans); }
+#terrain-panel.map-panel .science-notes,
+#terrain-panel.map-panel #dust-map-period,
+#terrain-panel.map-panel #temperature-map-period,
+#terrain-panel.map-panel #elevation-legend .science-notes { font-size: 12px; color: var(--muted); }
+@media (max-width: 760px) {
+    #terrain-panel.map-panel { top: 72px; bottom: auto; right: 16px; max-height: 40vh; }
+}
