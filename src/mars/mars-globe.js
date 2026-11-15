@@ -4,15 +4,20 @@ import { createTerrainControls } from '../ui/terrain-controls.js?v=6';
 import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=6';
 import { createMarsSkybox } from './mars-skybox.js';
-import { MISSIONS } from '../missions/mission-data.js?v=11';
+import { MISSIONS } from '../missions/mission-data.js?v=12';
 import { createMissionPins } from '../missions/mission-pins.js?v=10';
-import { createMissionSelection } from '../missions/mission-selection.js?v=23';
-import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=24';
+import { createMissionSelection } from '../missions/mission-selection.js?v=25';
+import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=25';
 import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
+import { createMissionPanel } from '../ui/mission-panel.js?v=3';
+import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
 
 (async () => {
     const container = document.getElementById("mars-globe");
     const routeData = loadRoutes(MISSIONS); // fetch while the viewer starts
+    const photoData = fetch('data/photos.json', { cache: 'no-cache' })
+        .then(response => response.json())
+        .catch(error => { console.error('Photos could not be loaded', error); return {}; });
 
     const ellipsoid = new Cesium.Ellipsoid(MARS_RADIUS, MARS_RADIUS, MARS_RADIUS);
     Cesium.Ellipsoid.default = ellipsoid;
@@ -73,6 +78,7 @@ import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
     const routes = createRouteLayer(viewer, ellipsoid, await routeData);
     createRouteEndpoints(viewer, ellipsoid, routes, MISSIONS.map(m => m.id));
     selection = createMissionSelection(viewer, ellipsoid, { pins, routes, missions: MISSIONS });
+    createMissionPanel(selection, routes, await photoData, createPhotoViewer());
 
     const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));
     const controls = createTerrainControls(viewer, imagery, enterInteractiveMode, ellipsoid);

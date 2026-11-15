@@ -7,14 +7,18 @@ const SHOW_BELOW_HEIGHT = 600_000; // metres above the surface
 // Google Maps-style lines: a wider dark "casing" under a coloured fill.
 // Each route is drawn as its science-phase segments.
 //   idle:   route not selected (light alternative-route look)
-//   active: route selected, or the selected segment
+//   active: route selected, or the selected segment; coloured by difficulty
 //   muted:  the other segments while one segment is selected (still clickable)
 //   hover:  blue highlight drawn on top of the segment under the cursor
-// Difficulty colours will later replace the active fill per segment.
+// Hard segments are slightly wider so colour is not the only cue.
 const color = css => Cesium.Color.fromCssColorString(css);
 const STYLE = {
     idle:   { casing: color('rgba(8, 24, 54, 0.75)'), casingWidth: 7,  fill: color('#8ab4f8'), fillWidth: 4, z: 0 },
-    active: { casing: color('rgba(8, 24, 54, 0.9)'),  casingWidth: 10, fill: color('#1a73e8'), fillWidth: 6, z: 4 },
+    active: {
+        easy:   { casing: color('rgba(10, 30, 16, 0.9)'), casingWidth: 10, fill: color('#34a853'), fillWidth: 6, z: 4 },
+        medium: { casing: color('rgba(48, 24, 0, 0.9)'),  casingWidth: 10, fill: color('#fb8c00'), fillWidth: 6, z: 4 },
+        hard:   { casing: color('rgba(54, 8, 8, 0.9)'),   casingWidth: 12, fill: color('#ea4335'), fillWidth: 8, z: 4 },
+    },
     muted:  { casing: color('rgba(20, 22, 26, 0.6)'), casingWidth: 8,  fill: color('#9aa0a6'), fillWidth: 5, z: 2 },
     hover:  { casing: color('rgba(255, 255, 255, 0.95)'), casingWidth: 14, fill: color('#4dabff'), fillWidth: 9, z: 6 },
 };
@@ -79,7 +83,7 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
                 let style = STYLE.idle;
                 if (id === selectedId) {
                     style = selectedSegment === undefined || selectedSegment === index
-                        ? STYLE.active : STYLE.muted;
+                        ? STYLE.active[segment.difficulty] : STYLE.muted;
                 }
                 if (segment.style !== style) {
                     setStyle(segment.line, style);
