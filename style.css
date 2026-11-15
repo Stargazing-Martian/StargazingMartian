@@ -813,3 +813,301 @@ body {
 #terrain-panel > fieldset,
 #terrain-panel > details { margin-top: 14px; }
 #mission-environment > summary { cursor: pointer; font-weight: 600; }
+
+/* Right panel, same language as the mission panel: title, then the map-mode
+   picker as three preview tiles with mono captions. */
+#terrain-panel {
+    width: min(340px, calc(100vw - 32px));
+    padding: 18px 20px 20px;
+    background: rgb(12 10 9 / .9);
+}
+#terrain-panel .side-title {
+    margin: 0 0 12px;
+    font: 700 24px/1.15 var(--font-sans);
+    letter-spacing: -.01em;
+    color: #f6f1ea;
+}
+.map-modes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 4px;
+}
+#terrain-panel .map-mode {
+    display: grid;
+    gap: 7px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #b3a899;
+    font: 500 11px/1.2 var(--font-mono);
+    text-align: center;
+    cursor: pointer;
+}
+#terrain-panel .map-mode:hover:not(:disabled) { background: none; }
+.map-mode img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1.55;
+    object-fit: cover;
+    border-radius: 10px;
+    outline: 1px solid rgb(255 255 255 / .1);
+    outline-offset: -1px;
+    transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    filter: saturate(.85) brightness(.85);
+}
+.map-mode:hover img { transform: translateY(-2px); filter: none; }
+.map-mode[aria-checked="true"] { color: #f6f1ea; }
+.map-mode[aria-checked="true"] img {
+    filter: none;
+    box-shadow: 0 0 0 2px #f6f1ea, 0 6px 18px rgb(0 0 0 / .45);
+}
+.map-mode:active img { transform: scale(.97); }
+#terrain-panel .map-mode:focus-visible { outline: none; }
+#terrain-panel .map-mode:focus-visible img { box-shadow: 0 0 0 2px #4dabff; }
+#science-map-context { margin: 10px 0 0; }
+/* Terrain status and surface options sit below the picker, quieter. */
+#terrain-panel #terrain-status { margin: 16px 0 4px; padding-top: 12px; border-top: .5px solid rgb(255 255 255 / .12); font-size: 12px; }
+#terrain-panel #terrain-coverage { margin-top: 0; }
+
+/* ===== Right panel: bottom-right twin of the mission panel ===== */
+#terrain-panel {
+    --ink: #f6f1ea;
+    --muted: #b3a899;
+    --line: rgb(255 255 255 / .12);
+    top: auto;
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    z-index: 20;
+    width: min(340px, calc(100vw - 32px));
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    padding: 18px 20px 20px;
+    color: var(--ink);
+    background: rgb(12 10 9 / .9);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    backdrop-filter: blur(22px) saturate(1.4);
+    border: .5px solid rgb(255 255 255 / .15);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgb(0 0 0 / .35);
+    font: 14px/1.45 var(--font-sans);
+}
+/* Cesium's full-screen button would sit under the panel. */
+.cesium-viewer-fullscreenContainer { display: none; }
+#terrain-panel .side-title { font: 600 24px/1.15 var(--font-sans); margin: 2px 0 14px; }
+#terrain-panel p { margin: 0; }
+#terrain-panel label { color: var(--muted); font: 500 10px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+#terrain-panel select,
+#terrain-panel input[type="text"],
+#terrain-panel input[type="number"],
+#terrain-panel input[type="date"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    font: 500 13px/1.3 var(--font-sans);
+    color: var(--ink);
+    background: rgb(255 255 255 / .07);
+    border: .5px solid rgb(255 255 255 / .16);
+    border-radius: 8px;
+}
+#terrain-panel button:not(.map-mode) {
+    width: 100%;
+    padding: 9px 12px;
+    font: 600 13px/1.2 var(--font-sans);
+    color: var(--ink);
+    background: rgb(255 255 255 / .08);
+    border: .5px solid rgb(255 255 255 / .16);
+    border-radius: 8px;
+}
+
+/* Compact essentials for the active map: period, colour scale, status. */
+#science-map-controls { margin: 14px 0 0; padding: 0; }
+.scientific-map-panel { gap: 8px; }
+.scientific-map-panel .science-badge,
+.scientific-map-legend > p,
+#dust-map-sample, #temperature-map-sample { display: none; }
+#dust-map-status, #temperature-map-status { font: 500 11px/1.4 var(--font-mono); color: var(--muted); }
+#dust-map-period, #temperature-map-period { font-size: 11.5px; color: var(--muted); }
+.scientific-map-legend { padding: 0; background: none; font: 500 10.5px/1.3 var(--font-mono); color: var(--muted); }
+.scientific-map-ramp, .elevation-ramp { height: 8px; border-radius: 4px; }
+.elevation-labels { font: 500 10.5px/1.3 var(--font-mono); color: var(--muted); }
+#elevation-legend { margin-top: 14px; }
+#elevation-legend .science-notes { margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+.scientific-map-reading { font-size: 12px; color: var(--ink); }
+#terrain-panel .science-notes { font-size: 12px; color: var(--muted); }
+#terrain-panel details.science-notes > summary { color: var(--ink); font-weight: 600; }
+
+/* "More options": everything else, folded away. */
+.map-more {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: .5px solid var(--line);
+}
+.map-more > summary,
+#mission-environment > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    list-style: none;
+    cursor: pointer;
+    font: 600 13px/1.3 var(--font-sans);
+    color: var(--ink);
+}
+.map-more > summary::-webkit-details-marker,
+#mission-environment > summary::-webkit-details-marker { display: none; }
+.map-more > summary::after,
+#mission-environment > summary::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-right: 3px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform .2s ease;
+}
+.map-more[open] > summary::after,
+#mission-environment[open] > summary::after { transform: rotate(-135deg) translate(-2px, 0); }
+.map-more[open] > :not(summary) { animation: more-in .2s ease-out; }
+@keyframes more-in { from { opacity: 0; transform: translateY(-3px); } }
+.map-more > :not(summary) { margin-top: 10px; }
+.map-more #terrain-status { margin-top: 12px; padding-top: 0; border-top: 0; font: 500 11px/1.4 var(--font-mono); }
+.map-more #relief-controls { display: grid; gap: 6px; }
+.map-more #relief-controls label:has(input[type="checkbox"]) {
+    display: flex; gap: 8px; align-items: center;
+    font: 500 13px/1.3 var(--font-sans); letter-spacing: 0; text-transform: none; color: var(--ink);
+}
+#mission-environment { padding-top: 10px; border-top: .5px solid var(--line); }
+.mission-environment-controls { display: grid; gap: 8px; margin-top: 10px; }
+
+@media (max-width: 760px) {
+    /* Phones: the map panel goes to the top so the mission panel keeps the bottom. */
+    #terrain-panel { top: 72px; bottom: auto; right: 16px; max-height: 40vh; }
+}
+
+/* Four map modes in one row. */
+.map-modes { grid-template-columns: repeat(4, 1fr); gap: 7px; }
+#terrain-panel .map-mode { font-size: 10.5px; }
+/* The topographic switch is now a tile of its own. */
+.map-more #relief-controls label:has(#topography) { display: none; }
+
+/* The map panel belongs to exploring: hidden on the showcase, eases in after. */
+body:not(.is-exploring) #terrain-panel { display: none; }
+.is-exploring #terrain-panel { animation: panel-in .35s ease-out .3s both; }
+
+/* No pill behind the small logo while exploring. */
+#site-logo::before { display: none; }
+.is-exploring #site-logo svg { filter: drop-shadow(0 1px 6px rgb(0 0 0 / .6)); }
+
+/* ===== Map panel = mission panel ===== 
+   The aside carries the .mission-panel class, so title, eyebrow, subtitle,
+   labels, colours and type come from the same rules. Only the side differs;
+   the older #terrain-panel rules above are reset to the mission panel's values. */
+#terrain-panel.map-panel {
+    left: auto;
+    right: 24px;
+    top: auto;
+    bottom: 24px;
+    z-index: 20;
+    box-sizing: border-box;
+    width: min(360px, calc(100vw - 32px));
+    max-height: calc(100vh - 140px);
+    padding: 18px 20px 20px;
+    color: var(--ink);
+    background: rgb(12 10 9 / .90);
+    border: 0.5px solid rgb(255 255 255 / .15);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgb(0 0 0 / .35);
+    font: 14px/1.45 var(--font-sans);
+}
+#terrain-panel.map-panel .place { margin: 0 0 10px; color: var(--muted); }
+#terrain-panel.map-panel label,
+#terrain-panel.map-panel legend {
+    font: 500 10px/1.3 var(--font-mono);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+#terrain-panel.map-panel .map-mode { font: 500 10.5px/1.2 var(--font-mono); letter-spacing: .02em; }
+#terrain-panel.map-panel .map-more > summary,
+#terrain-panel.map-panel #mission-environment > summary,
+#terrain-panel.map-panel details.science-notes > summary { font: 600 13px/1.3 var(--font-sans); }
+#terrain-panel.map-panel .science-notes,
+#terrain-panel.map-panel #dust-map-period,
+#terrain-panel.map-panel #temperature-map-period,
+#terrain-panel.map-panel #elevation-legend .science-notes { font-size: 12px; color: var(--muted); }
+@media (max-width: 760px) {
+    #terrain-panel.map-panel { top: 72px; bottom: auto; right: 16px; max-height: 40vh; }
+}
+
+/* ===== Final touches ===== */
+/* Showcase hint: a quiet pill at the bottom, gently bobbing; gone when exploring. */
+#explore-hint {
+    position: fixed;
+    left: 50%;
+    bottom: 36px;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 16px 6px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: #f3ece2;
+    font: 500 11px/1.2 var(--font-mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transform: translateX(-50%);
+    opacity: .8;
+    animation: hint-in 1s ease-out 1.4s both;
+    transition: opacity .3s ease, transform .3s ease;
+}
+#explore-hint:hover { opacity: 1; }
+#explore-hint svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    animation: hint-bob 1.8s ease-in-out 2.4s infinite;
+}
+.is-exploring #explore-hint { opacity: 0; pointer-events: none; transform: translate(-50%, 10px); }
+@keyframes hint-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+@keyframes hint-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+/* Map mode: the picked tile settles in; the mode's details ease in. */
+.map-mode[aria-checked="true"] img { animation: tile-pick .3s cubic-bezier(.2, .9, .3, 1.3); }
+@keyframes tile-pick { from { transform: scale(.94); } }
+.scientific-map-panel:not([hidden]),
+#elevation-legend:not([hidden]) { animation: more-in .25s ease-out; }
+
+/* Panels: a touch more depth on the corners they float over. */
+.mission-panel { box-shadow: 0 12px 40px rgb(0 0 0 / .35), inset 0 .5px 0 rgb(255 255 255 / .06); }
+
+/* Destination markers on the network respond to the cursor nearby. */
+.network-node__label { transition: opacity .2s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+    #explore-hint, #explore-hint svg, .map-mode[aria-checked="true"] img,
+    .scientific-map-panel:not([hidden]), #elevation-legend:not([hidden]),
+    #site-logo, .is-exploring #terrain-panel { animation: none; }
+}
+
+/* Five map modes in one row. */
+.map-modes { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+#terrain-panel.map-panel .map-mode { font-size: 9.5px; letter-spacing: 0; }
+.map-mode img { aspect-ratio: 1.1; }
+/* Radiation mode text, same as the other modes. */
+#radiation-status { font: 500 11px/1.4 var(--font-mono); color: var(--muted); }
+#terrain-panel.map-panel label:has(input[type="checkbox"]) {
+    display: flex; gap: 8px; align-items: flex-start;
+    font: 500 13px/1.35 var(--font-sans); letter-spacing: 0; text-transform: none; color: var(--ink);
+}
+#terrain-panel.map-panel label:has(#topography) { display: none; }

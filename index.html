@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=28">
+    <link rel="stylesheet" href="style.css?v=37">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -33,6 +33,10 @@
                 <path d="M4.30346e-05 22.4V-7.62939e-06H14.816L19.84 9.69599L24.864 -7.62939e-06H39.68V22.4H30.08V8.63999L30.048 8.73599L22.944 22.4H16.736L9.63204 8.73599L9.60004 8.63999V22.4H4.30346e-05ZM41.3583 22.4L55.3423 -7.62939e-06H67.0863L81.0383 22.4H70.3823L68.4623 18.912H54.0303L52.0143 22.4H41.3583ZM58.2863 11.488L57.1983 13.408H65.4223L64.3663 11.488L61.7103 6.04799H61.0703L58.2863 11.488ZM82.6875 22.4V-7.62939e-06H114.592C116.874 -7.62939e-06 118.624 0.511992 119.84 1.53599C121.056 2.53866 121.664 3.92533 121.664 5.69599C121.664 7.06133 121.248 8.17066 120.416 9.02399C119.584 9.87733 118.282 10.464 116.512 10.784V11.424C118.453 11.5947 119.914 12.1493 120.896 13.088C121.877 14.0053 122.368 15.2 122.368 16.672V22.4H112V16.992C112 16.608 111.882 16.2987 111.648 16.064C111.413 15.8293 111.093 15.712 110.688 15.712H92.6075V22.4H82.6875ZM92.6075 9.63199H110.048C110.453 9.63199 110.773 9.50399 111.008 9.24799C111.242 8.99199 111.36 8.65066 111.36 8.22399C111.36 7.75466 111.232 7.40266 110.976 7.16799C110.72 6.93333 110.41 6.81599 110.048 6.81599H92.6075V9.63199ZM138.254 22.4V7.42399H123.374V-7.62939e-06H163.054V7.42399H148.174V22.4H138.254ZM164.895 22.4V14.976H179.775V7.42399H164.895V-7.62939e-06H204.575V7.42399H189.695V14.976H204.575V22.4H164.895ZM205.577 22.4L219.561 -7.62939e-06H231.305L245.257 22.4H234.601L232.681 18.912H218.249L216.233 22.4H205.577ZM222.505 11.488L221.417 13.408H229.641L228.585 11.488L225.929 6.04799H225.289L222.505 11.488ZM246.906 22.4V-7.62939e-06H256.698L276.666 12.352V-7.62939e-06H286.586V22.4H276.794L256.826 10.048V22.4H246.906Z"/>
             </svg>
         </a>
+        <button id="explore-hint" type="button" aria-label="Start exploring">
+            <span>Scroll to explore</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
         <header id="top-header">
 
             <h1 id="site-title" class="visually-hidden">Stargazing</h1>
@@ -68,81 +72,40 @@
         </div>
 
     </div>
-    <aside id="terrain-panel" aria-label="Mars map settings">
-        <p id="terrain-status" role="status" aria-live="polite">Loading Mars terrain…</p>
-        <p id="terrain-error" role="status" hidden></p>
-        <p id="terrain-coverage" class="science-notes" hidden></p>
-        <p id="terrain-source" class="science-notes"></p>
-        <p id="imagery-status" class="science-notes">NASA Viking global colour · NASA MRO/CTX detail in rover regions. CTX is grayscale; image and DEM resolutions differ.</p>
-        <fieldset id="relief-controls" disabled>
-            <legend>Surface view</legend>
-            <label><input type="checkbox" id="topography" checked> Topographic mode</label>
-            <label for="relief-scale">Height scale</label>
-            <select id="relief-scale">
-                <option value="1">1× — true height</option>
-                <option value="5" selected>5× — relief view</option>
-            </select>
-        </fieldset>
-        <div id="elevation-legend" hidden>
-            <div class="elevation-ramp"></div>
-            <div class="elevation-labels"><span>−8 km</span><span>Source DEM height</span><span>+22 km</span></div>
-            <p id="relief-scale-note" class="science-notes">Relief shown at 5× height; colours use source DEM metres.</p>
+    <aside id="terrain-panel" class="mission-panel map-panel" aria-label="Mars map settings">
+        <h2>Map mode</h2>
+        <p class="place">Choose what the globe shows.</p>
+        <div class="map-modes" role="radiogroup" aria-label="Map mode">
+            <button type="button" class="map-mode" role="radio" data-mode="dust" aria-checked="false">
+                <img src="assets/previews/dust.png" alt="" width="360" height="180">
+                <span>Dust</span>
+            </button>
+            <button type="button" class="map-mode" role="radio" data-mode="surface" aria-checked="true">
+                <img src="assets/previews/terrain.png" alt="" width="360" height="180">
+                <span>Terrain</span>
+            </button>
+            <button type="button" class="map-mode" role="radio" data-mode="topography" aria-checked="false">
+                <img src="assets/previews/topography.png" alt="" width="360" height="180">
+                <span>Topography</span>
+            </button>
+            <button type="button" class="map-mode" role="radio" data-mode="radiation" aria-checked="false">
+                <img src="assets/previews/radiation.png" alt="" width="360" height="180">
+                <span>Radiation</span>
+            </button>
+            <button type="button" class="map-mode" role="radio" data-mode="temperature" aria-checked="false">
+                <img src="assets/previews/temperature.png" alt="" width="360" height="180">
+                <span>Temperature</span>
+            </button>
         </div>
-        <details id="mission-environment">
-            <summary>Mission and time · NASA Pancam</summary>
-            <div class="mission-environment-controls">
-                <p class="science-badge">Historical rover observation · Spirit / Opportunity · 440 nm</p>
-                <label for="mission-weather-mission">Mission for environmental observations</label>
-                <select id="mission-weather-mission"></select>
-                <label for="mission-weather-kind">Time selection</label>
-                <select id="mission-weather-kind">
-                    <option value="sol">Mission Sol number</option>
-                    <option value="utc">Approximate UTC day (spacecraft clock)</option>
-                </select>
-                <label id="mission-weather-sol-label" for="mission-weather-sol">Mission Sol</label>
-                <input id="mission-weather-sol" type="number" min="1" step="1" value="2">
-                <label id="mission-weather-date-label" for="mission-weather-date" hidden>UTC day</label>
-                <input id="mission-weather-date" type="date" value="2004-01-26" hidden>
-                <button id="mission-weather-retry" type="button">Reload observations</button>
-                <p id="mission-weather-status" role="status" aria-live="polite"></p>
-                <label for="mission-weather-records">Matching source observation</label>
-                <select id="mission-weather-records" disabled></select>
-                <p id="mission-weather-reading" class="scientific-map-reading" role="status" aria-live="polite"></p>
-                <details id="mission-weather-details" class="science-notes" hidden>
-                    <summary>Observation identity and source</summary>
-                    <p id="mission-weather-provenance" class="scientific-map-reading"></p>
-                    <a id="mission-weather-source" hidden target="_blank" rel="noopener noreferrer">NASA Pancam source table</a>
-                </details>
-                <label><input id="mission-weather-bind" type="checkbox" checked> Match map periods to this observation</label>
-                <button id="mission-weather-visit" type="button" disabled>Visit the selected mission route</button>
-                <details class="science-notes">
-                    <summary>Observation limits</summary>
-                    <p>440 nm optical depth differs from TES 9.3 μm absorption optical depth normalized
-                        to 610 Pa; they are not compared directly. The relative-error field is not total
-                        uncertainty. The calibration header separately gives absolute error 0.03 at airmass 1.</p>
-                    <p>Sol is mission-specific and is the NASA local-time field rounded up. Approximate
-                        UTC is derived from integer-second image spacecraft clocks using NASA SPICE kernels.
-                        Archive endpoint differences of 1–6 seconds are observed; exact UTC dates near midnight
-                        cannot be guaranteed. Opportunity records outside the clock kernel coverage after
-                        28 March 2017 retain only their Sol; UTC is not extrapolated.</p>
-                    <p>Missing days are not filled. The mission pin is a landing-region reference, not the
-                        exact observation position. No air temperature, wind or live forecast is provided;
-                        this archive alone cannot establish astronaut route safety. The panel mission can
-                        be examined independently of the selection on the map.</p>
-                    <a href="https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/" target="_blank" rel="noopener noreferrer">NASA MER Pancam archive</a>
-                </details>
-            </div>
-        </details>
         <fieldset id="science-map-controls">
-            <legend>Science map</legend>
-            <label for="science-map-mode">Map mode</label>
-            <select id="science-map-mode">
+            <legend class="visually-hidden">Science map</legend>
+            <label for="science-map-mode" class="visually-hidden">Map mode</label>
+            <select id="science-map-mode" class="visually-hidden" tabindex="-1">
                 <option value="surface">Surface and terrain</option>
                 <option value="dust">Atmospheric dust · NASA TES</option>
                 <option value="temperature">Surface temperature · NASA TES</option>
                 <option value="radiation">Radiation shielding · derived GCR model</option>
             </select>
-            <p id="science-map-context" class="science-notes">Free archive browsing · no mission/date association.</p>
             <div id="radiation-map-panel" class="scientific-map-panel" hidden>
                 <p class="science-badge">Derived planning model · NASA topography + published transport table</p>
                 <p id="radiation-status" role="status"></p>
@@ -221,10 +184,78 @@
                 </details>
             </div>
         </fieldset>
+        <div id="elevation-legend" hidden>
+            <div class="elevation-ramp"></div>
+            <div class="elevation-labels"><span>−8 km</span><span>Source DEM height</span><span>+22 km</span></div>
+            <p id="relief-scale-note" class="science-notes">Relief shown at 5× height; colours use source DEM metres.</p>
+        </div>
+        <details id="map-more" class="map-more">
+            <summary>More options</summary>
+            <p id="terrain-status" role="status" aria-live="polite">Loading Mars terrain…</p>
+            <p id="terrain-error" role="status" hidden></p>
+            <p id="terrain-coverage" class="science-notes" hidden></p>
+            <p id="terrain-source" class="science-notes"></p>
+            <p id="imagery-status" class="science-notes">NASA Viking global colour · NASA MRO/CTX detail in rover regions. CTX is grayscale; image and DEM resolutions differ.</p>
+            <p id="science-map-context" class="science-notes">Free archive browsing · no mission/date association.</p>
+            <fieldset id="relief-controls" disabled>
+                <legend>Surface view</legend>
+                <label><input type="checkbox" id="topography"> Topographic mode</label>
+                <label for="relief-scale">Height scale</label>
+                <select id="relief-scale">
+                    <option value="1">1× — true height</option>
+                    <option value="5" selected>5× — relief view</option>
+                </select>
+            </fieldset>
+            <details id="mission-environment">
+                <summary>Mission and time · NASA Pancam</summary>
+                <div class="mission-environment-controls">
+                    <p class="science-badge">Historical rover observation · Spirit / Opportunity · 440 nm</p>
+                    <label for="mission-weather-mission">Mission for environmental observations</label>
+                    <select id="mission-weather-mission"></select>
+                    <label for="mission-weather-kind">Time selection</label>
+                    <select id="mission-weather-kind">
+                        <option value="sol">Mission Sol number</option>
+                        <option value="utc">Approximate UTC day (spacecraft clock)</option>
+                    </select>
+                    <label id="mission-weather-sol-label" for="mission-weather-sol">Mission Sol</label>
+                    <input id="mission-weather-sol" type="number" min="1" step="1" value="2">
+                    <label id="mission-weather-date-label" for="mission-weather-date" hidden>UTC day</label>
+                    <input id="mission-weather-date" type="date" value="2004-01-26" hidden>
+                    <button id="mission-weather-retry" type="button">Reload observations</button>
+                    <p id="mission-weather-status" role="status" aria-live="polite"></p>
+                    <label for="mission-weather-records">Matching source observation</label>
+                    <select id="mission-weather-records" disabled></select>
+                    <p id="mission-weather-reading" class="scientific-map-reading" role="status" aria-live="polite"></p>
+                    <details id="mission-weather-details" class="science-notes" hidden>
+                        <summary>Observation identity and source</summary>
+                        <p id="mission-weather-provenance" class="scientific-map-reading"></p>
+                        <a id="mission-weather-source" hidden target="_blank" rel="noopener noreferrer">NASA Pancam source table</a>
+                    </details>
+                    <label><input id="mission-weather-bind" type="checkbox" checked> Match map periods to this observation</label>
+                    <button id="mission-weather-visit" type="button" disabled>Visit the selected mission route</button>
+                    <details class="science-notes">
+                        <summary>Observation limits</summary>
+                        <p>440 nm optical depth differs from TES 9.3 μm absorption optical depth normalized
+                            to 610 Pa; they are not compared directly. The relative-error field is not total
+                            uncertainty. The calibration header separately gives absolute error 0.03 at airmass 1.</p>
+                        <p>Sol is mission-specific and is the NASA local-time field rounded up. Approximate
+                            UTC is derived from integer-second image spacecraft clocks using NASA SPICE kernels.
+                            Archive endpoint differences of 1–6 seconds are observed; exact UTC dates near midnight
+                            cannot be guaranteed. Opportunity records outside the clock kernel coverage after
+                            28 March 2017 retain only their Sol; UTC is not extrapolated.</p>
+                        <p>Missing days are not filled. The mission pin is a landing-region reference, not the
+                            exact observation position. No air temperature, wind or live forecast is provided;
+                            this archive alone cannot establish astronaut route safety. The panel mission can
+                            be examined independently of the selection on the map.</p>
+                        <a href="https://pds-geosciences.wustl.edu/mer/mer1_mer2-m-pancam-5-atmos-opacity-v1/merao_1xxx/" target="_blank" rel="noopener noreferrer">NASA MER Pancam archive</a>
+                    </details>
+                </div>
+            </details>
+        </details>
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
     <script src="site-config.js?v=1"></script>
-    <script type="module" src="app.js?v=45"></script>
+    <script type="module" src="app.js?v=48"></script>
 </body>
 
 </html>
