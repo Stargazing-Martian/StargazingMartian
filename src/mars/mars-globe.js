@@ -1,14 +1,15 @@
 import { createVikingImagery } from '../nasa/nasa-layers.js';
-import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, saveTerrainUrl, terrainTimeoutMs } from './config.js?v=6';
-import { createTerrainControls } from '../ui/terrain-controls.js?v=8';
-import { createScienceMaps } from '../science/science-map.js?v=2';
+import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, terrainTimeoutMs } from './config.js?v=7';
+import { createTerrainControls } from '../ui/terrain-controls.js?v=9';
+import { createMissionEnvironment } from '../ui/mission-environment.js?v=2';
+import { createScienceMaps } from '../science/science-map.js?v=3';
 import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=6';
 import { createMarsSkybox } from './mars-skybox.js';
 import { MISSIONS } from '../missions/mission-data.js?v=12';
 import { createMissionPins } from '../missions/mission-pins.js?v=11';
 import { createMissionSelection } from '../missions/mission-selection.js?v=26';
-import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=25';
+import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=26';
 import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
 import { createMissionPanel } from '../ui/mission-panel.js?v=5';
 import { createPhotoViewer } from '../ui/photo-viewer.js?v=5';
@@ -79,7 +80,7 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
     const { enterInteractiveMode, onEnterInteractive } = createMarsCamera(container, viewer);
 
     // Pins never show in the showcase; in exploration they need a zoom-in first.
-    let selection;
+    let selection, environment;
     const pins = createMissionPins(viewer, ellipsoid, MISSIONS, {
         onSelect: mission => selection.select(mission),
     });
@@ -98,14 +99,16 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
     createMissionPanel(selection, routes, await photoData, createPhotoViewer());
 
     const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));
-    const controls = createTerrainControls(viewer, imagery, enterInteractiveMode, ellipsoid);
-    createScienceMaps(viewer, ellipsoid, controls);
-    const address      = document.getElementById('terrain-url');
+    const controls = createTerrainControls(viewer, imagery);
+    const scienceMaps = createScienceMaps(viewer, ellipsoid, controls);
+    environment = createMissionEnvironment(MISSIONS, scienceMaps, async mission => {
+        await enterInteractiveMode();
+        selection.select(mission);
+    });
     const errorMessage = document.getElementById('terrain-error');
-    const connection   = document.getElementById('terrain-connection');
     const status       = document.getElementById('terrain-status');
 
-    address.value = initialTerrainUrl();
+    selection.onChange(({ mission }) => environment.selectMission(mission));
 
     let generation = 0;
     let removeProviderError;
@@ -131,7 +134,7 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
         errorMessage.hidden    = true;
         setStatus('Checking the CTOD connection and heights…', 'loading');
         try {
-            const url      = normalizeTerrainUrl(address.value.trim());
+            const url      = normalizeTerrainUrl(initialTerrainUrl());
             const response = await fetch(`${url}/layer.json`, {
                 signal: AbortSignal.timeout(terrainTimeoutMs), cache: 'no-store'
             });
@@ -163,7 +166,6 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
                     setStatus(`3D terrain: ${count} tiles failed. Try again.`, 'warning');
                     errorMessage.hidden = false;
                     errorMessage.textContent = `Tile ${key}: ${error.message ?? error}`;
-                    connection.open = true;
                 },
                 onRecovered() {
                     if (current !== generation) return;
@@ -172,21 +174,22 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
                 }
             });
             viewer.terrainProvider = provider;
-            controls.setProvider(provider);
+            routes.setTerrain(provider);
             controls.setReady(true);
-            saveTerrainUrl(url);
-            address.value   = url;
-            connection.open = false;
+            const coverage = document.getElementById('terrain-coverage');
+            if (metadata.staticCoverage) {
+                const { globalMaxZoom, regionalMaxZoom } = metadata.staticCoverage;
+                coverage.textContent = `Global terrain through level ${globalMaxZoom}; mission regions through level ${regionalMaxZoom}. ` +
+                    'Outside those regions, terrain detail is coarser. Source DEM: approximately 200 m.';
+                coverage.hidden = false;
+            }
             setStatus(readyText, 'ready');
         } catch (error) {
             if (current !== generation) return;
             console.error('Mars terrain unavailable', error);
-            connection.open = true;
             setStatus('3D terrain not connected — showing surface imagery only.', 'error');
             errorMessage.hidden    = false;
-            errorMessage.textContent = error instanceof TypeError
-                ? `Could not read the CTOD response. CORS must allow this origin: ${location.origin}.`
-                : error.message;
+            errorMessage.textContent = 'Terrain data could not be loaded. Science maps and mission observations remain available.';
         }
     }
 
@@ -202,19 +205,6 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
         Cesium.Cartesian3.normalize(direction, direction);
     });
 
-    document.getElementById('terrain-form').addEventListener('submit', event => {
-        event.preventDefault();
-        if (address.value) void loadTerrain();
-    });
-
-    if (address.value) void loadTerrain();
-    else {
-        // Published site: there is no CTOD server to connect to, so the
-        // terrain section would only show a connection error. Keep the
-        // science maps. (display, not `hidden`: CSS sets display on some.)
-        for (const id of ['terrain-status', 'terrain-connection', 'relief-controls',
-                          'elevation-legend', 'terrain-reading']) {
-            document.getElementById(id).style.display = 'none';
-        }
-    }
+    // Enabled on every host, including GitHub Pages. The source lives in site-config.js.
+    void loadTerrain();
 })();

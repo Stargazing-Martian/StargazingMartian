@@ -28,7 +28,11 @@ and dust maps use different processing. The temperature UI reports the actual
 first/last accepted observations; the numeric picker also reports the exact
 first/last UTC and local-time range for its individual grid cell. Planetary
 calendar Sol-of-Year and rover mission Sol are not treated as interchangeable.
-No automatic rover-route/date association is made.
+The separate [mission panel](../mer-weather/README.md) can restrict available
+periods by a clock-derived MER observation time. This is interval overlap,
+not an exact rover-position or same-day temperature association. If the
+reference cell's observation range excludes that UTC day, no local temperature
+is assigned to the day in the automatic mission readout.
 
 - Only published retrievals in the selected UTC interval with **13 <= LTST < 15**
   (local true solar hours), finite positive TSURF, valid Mars coordinates and a

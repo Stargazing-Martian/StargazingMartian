@@ -15,3 +15,6 @@ ctod/data/*
 
 # Python build/test artifacts
 __pycache__/
+
+# Interrupted static terrain downloads
+data/terrain/**/*.part

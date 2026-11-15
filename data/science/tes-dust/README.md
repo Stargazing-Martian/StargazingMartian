@@ -85,4 +85,7 @@ new backend service, API key, or cloud-provider dependency is introduced.
   surface/topography returned, CTOD stayed ready, the obsolete science legend
   and reading were hidden, and another valid period recovered the science view.
 - No backend/Docker changes, rover weather series, automatic mission-date
-  matching, or cloud deployment are part of this stage.
+  matching, or cloud deployment were part of the original dust-map stage.
+  The subsequent [mission panel](../mer-weather/README.md) adds a separate
+  Pancam series and temporal overlap filter; it does not equate TES and
+  Pancam quantities or infer weather at the rover's exact coordinates.

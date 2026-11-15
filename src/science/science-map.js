@@ -1,6 +1,7 @@
 import { DUST_STOPS, dustPixels, fetchDustProduct, sampleDust } from './dust-data.js?v=2';
 import { TEMPERATURE_STOPS, temperaturePixels, fetchTemperatureProduct,
     sampleTemperature, kelvinToCelsius } from './temperature-data.js?v=2';
+import { matchingPeriods } from './mission-environment-data.js?v=2';
 
 const formatDate = value => new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
@@ -56,7 +57,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
             ([stop, rgb]) => `rgb(${rgb.join(',')}) ${stop * 100}%`).join(', ')})`;
         return [key, view];
     }));
-    let layer, activeProduct, activeView, pending;
+    let layer, activeProduct, activeView, pending, context;
     let generation = 0, destroyed = false;
     const cache = new Map();
 
@@ -73,19 +74,26 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
                     (view.key === 'temperature' && (catalog.quantity?.unit !== 'Kelvin' || catalog.quantity.sourceField !== 'TSURF'))) {
                     throw new Error('NASA data catalogue is not supported.');
                 }
-                view.select.replaceChildren(...catalog.products.map(entry => {
-                    const option = document.createElement('option');
-                    option.value = entry.id;
-                    option.textContent = new Intl.DateTimeFormat('en-GB', {
-                        day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
-                    }).formatRange(new Date(entry.observationStart), new Date(entry.observationEnd));
-                    return option;
-                }));
-                view.select.value = catalog.defaultProduct;
                 return catalog;
             }).catch(error => { view.catalogPromise = undefined; throw error; });
         }
         return view.catalogPromise;
+    }
+
+    function periods(view, catalog) {
+        const previous = view.select.value;
+        const entries = context ? matchingPeriods(catalog.products, context.utc) : catalog.products;
+        view.select.replaceChildren(...entries.map(entry => {
+            const option = document.createElement('option');
+            option.value = entry.id;
+            option.textContent = new Intl.DateTimeFormat('en-GB', {
+                day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+            }).formatRange(new Date(entry.observationStart), new Date(entry.observationEnd));
+            return option;
+        }));
+        view.select.value = entries.some(e => e.id === previous) ? previous :
+            entries.some(e => e.id === catalog.defaultProduct) ? catalog.defaultProduct : entries[0]?.id ?? '';
+        return entries;
     }
 
     function clearLayer() {
@@ -121,7 +129,15 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
         try {
             const catalog = await getCatalog(view);
             if (current !== generation || destroyed) return;
-            const entry = catalog.products.find(item => item.id === view.select.value);
+            const entries = periods(view, catalog);
+            if (context && !entries.length) {
+                view.status.dataset.state = 'missing';
+                view.status.textContent = context.utc ?
+                    'This sample archive has no map period overlapping the observation. Surface view is active.' :
+                    'No supported UTC observation for this mission/time. No date matching was performed; surface view is active.';
+                return;
+            }
+            const entry = entries.find(item => item.id === view.select.value);
             if (!entry) throw new Error('Could not select a NASA observation period.');
             const cacheKey = `${view.key}/${entry.id}`;
             let product = cache.get(cacheKey);
@@ -154,6 +170,22 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
             view.productId.textContent = entry.sourceLidvid ?? entry.lidvid;
             view.sampleButton.disabled = false;
             view.reading.textContent = 'Shift+click a region, or read the region at the centre, to see its value.';
+            if (context && Number.isFinite(context.longitude) && Number.isFinite(context.latitude)) {
+                const sample = view.sample(product, context.longitude, context.latitude);
+                let detail = sample.missing ? 'No valid regional data in this cell.' : view.describe(sample);
+                if (view.key === 'temperature' && !sample.missing) {
+                    const day = context.utc.slice(0, 10);
+                    const first = new Date(sample.values.FIRST_UTC * 1000).toISOString().slice(0, 10);
+                    const last = new Date(sample.values.LAST_UTC * 1000).toISOString().slice(0, 10);
+                    if (day < first || day > last) {
+                        detail = `Observations in this cell span ${first} – ${last}. ` +
+                            `No local temperature match for ${day}; no temperature assigned to that day.`;
+                    }
+                }
+                view.reading.textContent = `${context.mission} landing-region reference cell (not the exact rover observation position):\n` +
+                    detail +
+                    '\nPeriod overlap only; not weather measured on the same day at the same position.';
+            }
             viewer.scene.requestRender();
         } catch (error) {
             if (current !== generation || destroyed) return;
@@ -163,7 +195,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
             view.retryButton.hidden = false;
         } finally {
             clearTimeout(timeout);
-            if (view.loadingGeneration === current) view.select.disabled = false;
+            if (view.loadingGeneration === current) view.select.disabled = !view.select.options.length;
             if (current === generation) pending = undefined;
         }
     }
@@ -181,7 +213,8 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
         const sample = activeView.sample(activeProduct, lon, lat);
         const location = `${number(lat)}° latitude, ${number(lon)}° east longitude`;
         activeView.reading.textContent = sample.missing ? `${location}: no valid data in this observation period.` :
-            `${location}\nGrid centre: ${number(sample.latitude)}°, ${number(sample.longitude)}°\n${activeView.describe(sample)}`;
+            `${location}\nGrid merkezi: ${number(sample.latitude)}°, ${number(sample.longitude)}°\n${activeView.describe(sample)}`;
+        if (context) activeView.reading.textContent += '\nThis is the region picked on the map, not the exact rover observation position. Time overlap is with the period only.';
     }
 
     const picker = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
@@ -195,6 +228,13 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
         view.retryButton.addEventListener('click', refresh);
     }
     return {
+        setContext(value) {
+            context = value;
+            document.getElementById('science-map-context').textContent = value ?
+                `${value.mission ?? 'Mission'} · ${value.utc ?? 'no UTC observation'} · overlapping map periods only. ` +
+                    'Regional averages are not instantaneous weather.' : 'Free archive browsing · no mission/date association.';
+            refresh();
+        },
         destroy() {
             destroyed = true; ++generation; pending?.abort(); clearLayer(); cache.clear(); picker.destroy();
             mode.removeEventListener('change', refresh);

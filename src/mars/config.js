@@ -1,18 +1,19 @@
 const options = globalThis.STARGAZING_CONFIG ?? {};
 export const MARS_RADIUS = 3396190;
 export const terrainTimeoutMs = options.terrainTimeoutMs ?? 120000;
-function defaultTerrainUrl() {
-    const { hostname, protocol } = location;
+export function resolveTerrainUrl({ hostname, protocol, pageUrl }, configuredUrl) {
+    if (configuredUrl !== null && configuredUrl !== undefined) return configuredUrl;
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
         return `${protocol}//${hostname}:5000/tiles/mars`;
     }
     const codespace = hostname.match(/^(.*)-\d+\.app\.github\.dev$/);
-    return codespace ? `${protocol}//${codespace[1]}-5000.app.github.dev/tiles/mars` : '';
+    if (codespace) return `${protocol}//${codespace[1]}-5000.app.github.dev/tiles/mars`;
+    // Respect the Pages repository prefix, e.g. /StargazingMartian/.
+    return new URL('data/terrain/mars/', pageUrl).href.replace(/\/$/, '');
 }
 export function initialTerrainUrl() {
-    let saved;
-    try { saved = localStorage.getItem('stargazing.terrainUrl'); } catch { /* Storage can be disabled. */ }
-    return options.terrainUrl ?? saved ?? defaultTerrainUrl();
+    return resolveTerrainUrl({ hostname: location.hostname, protocol: location.protocol,
+        pageUrl: new URL('../../', import.meta.url).href }, options.terrainUrl);
 }
 export function normalizeTerrainUrl(value) {
     if (!value.trim()) throw new Error('Enter the CTOD terrain URL.');
@@ -28,7 +29,4 @@ export function normalizeTerrainUrl(value) {
     url.hash = '';
     url.search = '';
     return url.href.replace(/\/$/, '');
-}
-export function saveTerrainUrl(value) {
-    try { localStorage.setItem('stargazing.terrainUrl', value); } catch { /* Session still works. */ }
 }
