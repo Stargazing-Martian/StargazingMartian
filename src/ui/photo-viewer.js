@@ -31,14 +31,23 @@ const escape = text => String(text).replace(/[&<>"']/g, c =>
 // Gaps in the mosaic (pure black) show the fill too. The viewer says so.
 const spheres = new Map();
 function sphereFor(photo) {
-    if (!spheres.has(photo.id)) spheres.set(photo.id, buildSphere(photo));
+    if (!spheres.has(photo.id)) {
+        // A failed build must not stay cached, or the panorama would never open again.
+        spheres.set(photo.id, buildSphere(photo).catch(error => { spheres.delete(photo.id); throw error; }));
+    }
     return spheres.get(photo.id);
 }
 
-async function buildSphere(photo) {
+const loadImage = src => new Promise((resolve, reject) => {
     const image = new Image();
-    image.src = photo.src;
-    await image.decode();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Could not load ${src}`));
+    image.src = src;
+});
+const timeout = ms => new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+
+async function buildSphere(photo) {
+    const image = await loadImage(photo.src);
     const width = image.naturalWidth;
     const height = width / 2;
     const stripHeight = Math.round(width * photo.vaov / 360);
@@ -143,14 +152,20 @@ export function createPhotoViewer() {
         const container = document.createElement('div');
         container.className = 'photo-viewer__pano';
         stage.appendChild(container);
-        const sphere = await sphereFor(photo);
+        // Full sphere if it is ready within a few seconds; otherwise open the
+        // original strip right away (sideways 360°, limited up/down) so the
+        // viewer never stays black. The sphere keeps building for next time.
+        let view;
+        try {
+            view = { panorama: await Promise.race([sphereFor(photo), timeout(4000)]), haov: 360, vaov: 180 };
+        } catch {
+            view = { panorama: photo.src, haov: photo.haov, vaov: photo.vaov, vOffset: 0,
+                     minPitch: -photo.vaov / 2, maxPitch: photo.vaov / 2 };
+        }
         if (current !== opened) return;
         viewer = pannellum.viewer(container, {
             type: 'equirectangular',
-            panorama: sphere,
-            // Full sphere: look all the way up and down.
-            haov: 360,
-            vaov: 180,
+            ...view,
             autoLoad: true,
             autoRotate: -2,
             autoRotateInactivityDelay: 4000,

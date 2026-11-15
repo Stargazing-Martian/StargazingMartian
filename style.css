@@ -1285,3 +1285,4 @@ body[data-map-mode]:not([data-map-mode="surface"]) #mars-globe::after { opacity:
 /* No Cesium badges on screen: data credits live in About and the README. */
 .cesium-viewer-bottom,
 .cesium-viewer-fullscreenContainer { display: none !important; }
+
