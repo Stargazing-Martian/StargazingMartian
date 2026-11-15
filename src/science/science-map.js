@@ -1,11 +1,11 @@
-import { DUST_STOPS, dustPixels, fetchDustProduct, sampleDust } from './dust-data.js?v=1';
+import { DUST_STOPS, dustPixels, fetchDustProduct, sampleDust } from './dust-data.js?v=2';
 import { TEMPERATURE_STOPS, temperaturePixels, fetchTemperatureProduct,
-    sampleTemperature, kelvinToCelsius } from './temperature-data.js?v=1';
+    sampleTemperature, kelvinToCelsius } from './temperature-data.js?v=2';
 
-const formatDate = value => new Intl.DateTimeFormat('tr-TR', {
+const formatDate = value => new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
 }).format(new Date(value));
-const number = value => value.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+const number = value => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
 const utc = value => new Date(value * 1000).toISOString().replace('T', ' ').replace('.000Z', ' UTC');
 
 const MODES = {
@@ -13,30 +13,30 @@ const MODES = {
         prefix: 'dust-map', directory: 'tes-dust', stops: DUST_STOPS,
         fetch: fetchDustProduct, pixels: dustPixels, sample: sampleDust,
         credit: 'NASA PDS · MGS/TES · Montabone et al. (2023) · doi:10.17189/kwez-jq47',
-        period: p => `Girdi gözlemleri (UTC): ${formatDate(p.observationStart)} – ${formatDate(p.observationEnd)} · ` +
-            `Mars yılı ${p.marsYear}, yılın solu ${p.solOfYear}.`,
+        period: p => `Input observations (UTC): ${formatDate(p.observationStart)} – ${formatDate(p.observationEnd)} · ` +
+            `Mars year ${p.marsYear}, sol of year ${p.solOfYear}.`,
         describe: sample => {
             const v = sample.values;
-            return `τ₆₁₀ = ${number(v.CDOD610)} · Belirsizlik: ${number(v.CDOD610UNC)}\n` +
-                `${v.CDODNUM} gözlem · ${v.CDODTW} sol pencere · Güvenilirlik: ${number(v.CDODREL)}.\n` +
-                '6° × 3° bölgesel atmosfer bağlamıdır; rota noktasındaki yerel ölçüm değildir.';
+            return `τ₆₁₀ = ${number(v.CDOD610)} · Uncertainty: ${number(v.CDOD610UNC)}\n` +
+                `${v.CDODNUM} observations · ${v.CDODTW}-sol window · Reliability: ${number(v.CDODREL)}.\n` +
+                'Regional 6° × 3° atmospheric context, not a local measurement at a route point.';
         },
     },
     temperature: {
         prefix: 'temperature-map', directory: 'tes-temperature', stops: TEMPERATURE_STOPS,
         fetch: fetchTemperatureProduct, pixels: temperaturePixels, sample: sampleTemperature,
-        credit: 'NASA PDS · MGS/TES TSURF · Stargazing bölgesel ortalaması · doi:10.17189/kwez-jq47',
-        period: p => `Kullanılan gözlemler (UTC): ${formatDate(p.observationStart)} – ${formatDate(p.observationEnd)}. ` +
-            'Yerel gerçek güneş saati: 13:00–15:00.',
+        credit: 'NASA PDS · MGS/TES TSURF · Stargazing regional average · doi:10.17189/kwez-jq47',
+        period: p => `Observations used (UTC): ${formatDate(p.observationStart)} – ${formatDate(p.observationEnd)}. ` +
+            'Local true solar time: 13:00–15:00.',
         describe: sample => {
             const v = sample.values;
-            return `Ortalama yüzey sıcaklığı: ${number(kelvinToCelsius(v.MEAN_K))} °C (${number(v.MEAN_K)} K)\n` +
-                `Gözlenen aralık: ${number(kelvinToCelsius(v.MIN_K))} – ${number(kelvinToCelsius(v.MAX_K))} °C · ${v.COUNT} gözlem.\n` +
-                (v.STD_K === null ? 'Yayılım: tek gözlemle hesaplanamaz.\n' :
-                    `Örnek yayılımı (s): ${number(v.STD_K)} K; ölçüm hatası değildir.\n`) +
-                `Bu hücrenin gözlemleri: ${utc(v.FIRST_UTC)} – ${utc(v.LAST_UTC)}.\n` +
-                `Yerel güneş saati: ${number(v.LTST_MIN)}–${number(v.LTST_MAX)} saat.\n` +
-                '6° × 3° hücredeki gündüz gözlemlerinin ortalamasıdır; hava sıcaklığı veya rover ölçümü değildir.';
+            return `Mean surface temperature: ${number(kelvinToCelsius(v.MEAN_K))} °C (${number(v.MEAN_K)} K)\n` +
+                `Observed range: ${number(kelvinToCelsius(v.MIN_K))} – ${number(kelvinToCelsius(v.MAX_K))} °C · ${v.COUNT} observations.\n` +
+                (v.STD_K === null ? 'Spread: cannot be computed from a single observation.\n' :
+                    `Sample spread (s): ${number(v.STD_K)} K; not measurement error.\n`) +
+                `Observations in this cell: ${utc(v.FIRST_UTC)} – ${utc(v.LAST_UTC)}.\n` +
+                `Local solar time: ${number(v.LTST_MIN)}–${number(v.LTST_MAX)} h.\n` +
+                'Average of daytime observations in a 6° × 3° cell; not air temperature or a rover measurement.';
         },
     },
 };
@@ -63,7 +63,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
     async function getCatalog(view) {
         if (!view.catalogPromise) {
             view.catalogPromise = fetch(view.catalogUrl, { signal: AbortSignal.timeout(15000) }).then(async response => {
-                if (!response.ok) throw new Error(`NASA veri kataloğu: HTTP ${response.status}`);
+                if (!response.ok) throw new Error(`NASA data catalogue: HTTP ${response.status}`);
                 const catalog = await response.json();
                 if (catalog.schemaVersion !== 1 || catalog.grid?.width !== 60 || catalog.grid?.height !== 60 ||
                     catalog.grid.longitudeStart !== -180 || catalog.grid.latitudeStart !== 88.5 ||
@@ -71,12 +71,12 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
                     !Array.isArray(catalog.products) || !catalog.products.length ||
                     !catalog.products.some(entry => entry.id === catalog.defaultProduct) ||
                     (view.key === 'temperature' && (catalog.quantity?.unit !== 'Kelvin' || catalog.quantity.sourceField !== 'TSURF'))) {
-                    throw new Error('NASA veri kataloğu desteklenmiyor.');
+                    throw new Error('NASA data catalogue is not supported.');
                 }
                 view.select.replaceChildren(...catalog.products.map(entry => {
                     const option = document.createElement('option');
                     option.value = entry.id;
-                    option.textContent = new Intl.DateTimeFormat('tr-TR', {
+                    option.textContent = new Intl.DateTimeFormat('en-GB', {
                         day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
                     }).formatRange(new Date(entry.observationStart), new Date(entry.observationEnd));
                     return option;
@@ -112,7 +112,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
         const view = views[mode.value];
         if (!view || destroyed) return;
         view.status.dataset.state = 'loading';
-        view.status.textContent = 'NASA gözlem dönemi yükleniyor…';
+        view.status.textContent = 'Loading NASA observation period…';
         view.select.disabled = true;
         view.loadingGeneration = current;
         const controller = new AbortController();
@@ -122,7 +122,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
             const catalog = await getCatalog(view);
             if (current !== generation || destroyed) return;
             const entry = catalog.products.find(item => item.id === view.select.value);
-            if (!entry) throw new Error('NASA gözlem dönemi seçilemedi.');
+            if (!entry) throw new Error('Could not select a NASA observation period.');
             const cacheKey = `${view.key}/${entry.id}`;
             let product = cache.get(cacheKey);
             if (!product) {
@@ -138,7 +138,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
                 ellipsoid, credit: view.credit,
             });
             if (current !== generation || destroyed) return;
-            if (controller.signal.aborted) throw new DOMException('NASA yüklemesi zaman aşımına uğradı.', 'AbortError');
+            if (controller.signal.aborted) throw new DOMException('NASA download timed out.', 'AbortError');
             layer = viewer.imageryLayers.add(new Cesium.ImageryLayer(provider, {
                 minificationFilter: Cesium.TextureMinificationFilter.NEAREST,
                 magnificationFilter: Cesium.TextureMagnificationFilter.NEAREST,
@@ -147,19 +147,19 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
             activeProduct = product; activeView = view;
             view.legend.hidden = false;
             view.status.dataset.state = 'ready';
-            view.status.textContent = `NASA TES · ${number(100 * product.validCount / 3600)}% geçerli grid noktası`;
+            view.status.textContent = `NASA TES · ${number(100 * product.validCount / 3600)}% valid grid points`;
             view.periodText.textContent = view.period(product);
             view.source.href = entry.sourceUrl;
             view.source.hidden = false;
             view.productId.textContent = entry.sourceLidvid ?? entry.lidvid;
             view.sampleButton.disabled = false;
-            view.reading.textContent = 'Bir bölgenin sayısal değerini okumak için Shift+tıkla veya merkezdeki bölgeyi seç.';
+            view.reading.textContent = 'Shift+click a region, or read the region at the centre, to see its value.';
             viewer.scene.requestRender();
         } catch (error) {
             if (current !== generation || destroyed) return;
             clearLayer();
             view.status.dataset.state = 'error';
-            view.status.textContent = `${error.name === 'AbortError' ? 'NASA verisi zamanında yüklenemedi.' : error.message} Yüzey görünümü etkin.`;
+            view.status.textContent = `${error.name === 'AbortError' ? 'NASA data did not load in time.' : error.message} Surface view is active.`;
             view.retryButton.hidden = false;
         } finally {
             clearTimeout(timeout);
@@ -173,15 +173,15 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
         const ray = viewer.camera.getPickRay(position);
         const hit = ray && viewer.scene.globe.pick(ray, viewer.scene);
         if (!hit) {
-            activeView.reading.textContent = 'Bu noktada Mars yüzeyi bulunamadı. Küre üzerindeki bir bölgeyi seçin.';
+            activeView.reading.textContent = 'No Mars surface at this point. Pick a region on the globe.';
             return;
         }
         const point = ellipsoid.cartesianToCartographic(hit);
         const lon = Cesium.Math.toDegrees(point.longitude), lat = Cesium.Math.toDegrees(point.latitude);
         const sample = activeView.sample(activeProduct, lon, lat);
-        const location = `${number(lat)}° enlem, ${number(lon)}° doğu boylamı`;
-        activeView.reading.textContent = sample.missing ? `${location}: bu gözlem döneminde geçerli veri yok.` :
-            `${location}\nGrid merkezi: ${number(sample.latitude)}°, ${number(sample.longitude)}°\n${activeView.describe(sample)}`;
+        const location = `${number(lat)}° latitude, ${number(lon)}° east longitude`;
+        activeView.reading.textContent = sample.missing ? `${location}: no valid data in this observation period.` :
+            `${location}\nGrid centre: ${number(sample.latitude)}°, ${number(sample.longitude)}°\n${activeView.describe(sample)}`;
     }
 
     const picker = new Cesium.ScreenSpaceEventHandler(viewer.canvas);

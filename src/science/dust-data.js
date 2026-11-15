@@ -12,34 +12,34 @@ export function validateDustProduct(product, entry) {
     if (product?.schemaVersion !== 1 || product.id !== entry.id || product.lidvid !== entry.lidvid ||
         product.observationStart !== entry.observationStart || product.observationEnd !== entry.observationEnd ||
         product.sourceSha256 !== entry.sourceSha256 || product.marsYear !== entry.marsYear ||
-        product.solOfYear !== entry.solOfYear) throw new Error('NASA ürün kimliği veya gözlem dönemi uyuşmuyor.');
+        product.solOfYear !== entry.solOfYear) throw new Error('NASA product ID or observation period does not match.');
     for (const name of DUST_FIELDS) {
         const values = product.fields?.[name];
         if (!Array.isArray(values) || values.length !== GRID_SIZE ||
-            values.some(v => v !== null && !Number.isFinite(v))) throw new Error('NASA harita verisi geçersiz.');
+            values.some(v => v !== null && !Number.isFinite(v))) throw new Error('NASA map data is invalid.');
     }
     let validCount = 0;
     for (let i = 0; i < GRID_SIZE; i++) {
         const missing = product.fields.CDOD610[i] === null;
         if (DUST_FIELDS.some(name => (product.fields[name][i] === null) !== missing)) {
-            throw new Error('NASA eksik veri maskesi tutarsız.');
+            throw new Error('NASA missing-data mask is inconsistent.');
         }
         if (missing) continue;
         ++validCount;
         const fields = product.fields;
         if (fields.CDOD610UNC[i] < 0 || fields.CDODTOTUNC[i] < 0 || fields.CDODNUM[i] < 1 ||
             !Number.isInteger(fields.CDODNUM[i]) || ![1, 3, 5, 7].includes(fields.CDODTW[i]) ||
-            fields.CDODREL[i] < 0 || fields.CDODREL[i] > 1) throw new Error('NASA kalite bilgisi geçersiz.');
+            fields.CDODREL[i] < 0 || fields.CDODREL[i] > 1) throw new Error('NASA quality data is invalid.');
     }
     if (validCount !== entry.validCount || validCount !== product.validCount) {
-        throw new Error('NASA haritasının geçerli veri sayısı uyuşmuyor.');
+        throw new Error('NASA map valid-data count does not match.');
     }
     return product;
 }
 
 export function gridCell(longitude, latitude) {
     if (!Number.isFinite(longitude) || !Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
-        throw new Error('Geçersiz Mars koordinatı.');
+        throw new Error('Invalid Mars coordinate.');
     }
     const column = Math.floor(((longitude + 183) % 360 + 360) % 360 / 6);
     const row = Math.min(59, Math.floor((90 - latitude) / 3));
@@ -77,12 +77,12 @@ export function dustPixels(product) {
 
 export async function fetchDustProduct(entry, baseUrl, { signal, fetcher = fetch } = {}) {
     const response = await fetcher(new URL(entry.file, baseUrl), { signal });
-    if (!response.ok) throw new Error(`NASA harita dosyası: HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`NASA map file: HTTP ${response.status}`);
     const raw = await response.arrayBuffer();
     if (globalThis.crypto?.subtle) {
         const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', raw)),
             v => v.toString(16).padStart(2, '0')).join('');
-        if (hash !== entry.sha256) throw new Error('NASA harita dosyasının bütünlüğü doğrulanamadı.');
+        if (hash !== entry.sha256) throw new Error('NASA map file integrity could not be verified.');
     }
     return validateDustProduct(JSON.parse(new TextDecoder().decode(raw)), entry);
 }

@@ -1,7 +1,7 @@
 import { createVikingImagery } from '../nasa/nasa-layers.js';
-import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, saveTerrainUrl, terrainTimeoutMs } from './config.js?v=5';
-import { createTerrainControls } from '../ui/terrain-controls.js?v=7';
-import { createScienceMaps } from '../science/science-map.js?v=1';
+import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, saveTerrainUrl, terrainTimeoutMs } from './config.js?v=6';
+import { createTerrainControls } from '../ui/terrain-controls.js?v=8';
+import { createScienceMaps } from '../science/science-map.js?v=2';
 import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=6';
 import { createMarsSkybox } from './mars-skybox.js';
@@ -102,7 +102,7 @@ import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
     function withTimeout(promise) {
         let timer;
         return Promise.race([promise, new Promise((_, reject) => {
-            timer = setTimeout(() => reject(new Error('CTOD yanıtı zaman aşımına uğradı.')), terrainTimeoutMs);
+            timer = setTimeout(() => reject(new Error('CTOD response timed out.')), terrainTimeoutMs);
         })]).finally(() => clearTimeout(timer));
     }
 
@@ -113,7 +113,7 @@ import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
         controls.setReady(false);
         viewer.terrainProvider = fallback;
         errorMessage.hidden    = true;
-        setStatus('CTOD bağlantısı ve yükseklikler doğrulanıyor…', 'loading');
+        setStatus('Checking the CTOD connection and heights…', 'loading');
         try {
             const url      = normalizeTerrainUrl(address.value.trim());
             const response = await fetch(`${url}/layer.json`, {
@@ -124,7 +124,7 @@ import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
             if (metadata.body !== 'mars' || !Array.isArray(metadata.ellipsoid) ||
                 metadata.ellipsoid.length !== 3 ||
                 metadata.ellipsoid.some(radius => radius !== MARS_RADIUS)) {
-                throw new Error('CTOD Mars modeli güncel değil veya küre yarıçapı uyuşmuyor.');
+                throw new Error('CTOD Mars model is out of date or the globe radius does not match.');
             }
             const provider = await withTimeout(Cesium.CesiumTerrainProvider.fromUrl(url, {
                 ellipsoid, requestVertexNormals: true, requestMetadata: false
@@ -135,16 +135,16 @@ import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
             const level   = Math.min(8, (metadata.available?.length ?? 1) - 1);
             const samples = await withTimeout(Cesium.sampleTerrain(provider, level, probes, true));
             if (samples.some(point => !Number.isFinite(point.height))) {
-                throw new Error('Terrain tile verisinden yükseklik okunamadı.');
+                throw new Error('Could not read heights from the terrain tiles.');
             }
             if (current !== generation) return;
             const resolution = Math.round(metadata.sourceResolutionMeters ?? 200);
-            const readyText = `3B arazi etkin · HRSC/MOLA ≈${resolution} m`;
+            const readyText = `3D terrain active · HRSC/MOLA ≈${resolution} m`;
             removeProviderError = monitorTerrain(provider, {
                 onFailure({ key, count, error }) {
                     if (current !== generation) return;
                     console.error(`Mars terrain tile ${key} failed`, error);
-                    setStatus(`3B arazi: ${count} bölge alınamadı. Yeniden deneyin.`, 'warning');
+                    setStatus(`3D terrain: ${count} tiles failed. Try again.`, 'warning');
                     errorMessage.hidden = false;
                     errorMessage.textContent = `Tile ${key}: ${error.message ?? error}`;
                     connection.open = true;
@@ -166,10 +166,10 @@ import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
             if (current !== generation) return;
             console.error('Mars terrain unavailable', error);
             connection.open = true;
-            setStatus('3B arazi bağlı değil — yalnızca yüzey görüntüsü gösteriliyor.', 'error');
+            setStatus('3D terrain not connected — showing surface imagery only.', 'error');
             errorMessage.hidden    = false;
             errorMessage.textContent = error instanceof TypeError
-                ? `CTOD yanıtı okunamadı. CORS ayarında bu origin'e izin verilmeli: ${location.origin}.`
+                ? `Could not read the CTOD response. CORS must allow this origin: ${location.origin}.`
                 : error.message;
         }
     }
@@ -192,4 +192,13 @@ import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
     });
 
     if (address.value) void loadTerrain();
+    else {
+        // Published site: there is no CTOD server to connect to, so the
+        // terrain section would only show a connection error. Keep the
+        // science maps. (display, not `hidden`: CSS sets display on some.)
+        for (const id of ['terrain-status', 'terrain-connection', 'relief-controls',
+                          'elevation-legend', 'terrain-reading']) {
+            document.getElementById(id).style.display = 'none';
+        }
+    }
 })();

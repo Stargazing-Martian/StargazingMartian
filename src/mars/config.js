@@ -15,13 +15,13 @@ export function initialTerrainUrl() {
     return options.terrainUrl ?? saved ?? defaultTerrainUrl();
 }
 export function normalizeTerrainUrl(value) {
-    if (!value.trim()) throw new Error('CTOD terrain adresini girin.');
+    if (!value.trim()) throw new Error('Enter the CTOD terrain URL.');
     const url = new URL(value, location.href);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
-        throw new Error('HTTP veya HTTPS terrain adresi girin.');
+        throw new Error('Enter an HTTP or HTTPS terrain URL.');
     }
     if (location.protocol === 'https:' && url.protocol !== 'https:') {
-        throw new Error('HTTPS sayfası için CTOD adresi de HTTPS olmalı.');
+        throw new Error('On an HTTPS page the CTOD URL must also be HTTPS.');
     }
     url.pathname = url.pathname.replace(/\/layer\.json\/?$/, '').replace(/\/$/, '');
     if (!url.pathname || url.pathname === '/') url.pathname = '/tiles/mars';
