@@ -6,8 +6,9 @@ import { createMarsCamera } from './mars-camera.js?v=6';
 import { createMarsSkybox } from './mars-skybox.js';
 import { MISSIONS } from '../missions/mission-data.js?v=11';
 import { createMissionPins } from '../missions/mission-pins.js?v=10';
-import { createMissionSelection } from '../missions/mission-selection.js?v=22';
-import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=22';
+import { createMissionSelection } from '../missions/mission-selection.js?v=23';
+import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=24';
+import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
 
 (async () => {
     const container = document.getElementById("mars-globe");
@@ -26,6 +27,10 @@ import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=22';
         homeButton:           false,
         sceneModePicker:      false,
         navigationHelpButton: false,
+        // Route clicks are handled by mission-selection; Cesium's own entity
+        // info box and selection marker would pop up on top of them.
+        infoBox:              false,
+        selectionIndicator:   false,
         animation:            false,
         timeline:             false,
         skyBox:               false,
@@ -66,6 +71,7 @@ import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=22';
 
     // Stage 3: routes appear when zoomed close or when their pin is selected.
     const routes = createRouteLayer(viewer, ellipsoid, await routeData);
+    createRouteEndpoints(viewer, ellipsoid, routes, MISSIONS.map(m => m.id));
     selection = createMissionSelection(viewer, ellipsoid, { pins, routes, missions: MISSIONS });
 
     const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));

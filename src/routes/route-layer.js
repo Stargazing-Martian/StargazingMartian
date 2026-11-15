@@ -5,20 +5,27 @@ const Cesium = globalThis.Cesium;
 const SHOW_BELOW_HEIGHT = 600_000; // metres above the surface
 
 // Google Maps-style lines: a wider dark "casing" under a coloured fill.
-// Selected = the active route, idle = the light alternative-route look.
+// Each route is drawn as its science-phase segments.
+//   idle:   route not selected (light alternative-route look)
+//   active: route selected, or the selected segment
+//   muted:  the other segments while one segment is selected (still clickable)
+//   hover:  blue highlight drawn on top of the segment under the cursor
+// Difficulty colours will later replace the active fill per segment.
 const color = css => Cesium.Color.fromCssColorString(css);
 const STYLE = {
-    idle:     { casing: color('#1a5fd6'), casingWidth: 8,  fill: color('#a9c4f5'), fillWidth: 5 },
-    selected: { casing: color('#17117a'), casingWidth: 12, fill: color('#3d33f0'), fillWidth: 8 },
+    idle:   { casing: color('rgba(8, 24, 54, 0.75)'), casingWidth: 7,  fill: color('#8ab4f8'), fillWidth: 4, z: 0 },
+    active: { casing: color('rgba(8, 24, 54, 0.9)'),  casingWidth: 10, fill: color('#1a73e8'), fillWidth: 6, z: 4 },
+    muted:  { casing: color('rgba(20, 22, 26, 0.6)'), casingWidth: 8,  fill: color('#9aa0a6'), fillWidth: 5, z: 2 },
+    hover:  { casing: color('rgba(255, 255, 255, 0.95)'), casingWidth: 14, fill: color('#4dabff'), fillWidth: 9, z: 6 },
 };
 
 // Real rover traverses, built by scripts/build_routes.py.
-// Returns Map<missionId, [[lon, lat, sol], ...]>.
+// Returns Map<missionId, { points: [[lon, lat, sol]], segments: [...] }>.
 export async function loadRoutes(missions) {
     const entries = await Promise.all(missions.filter(m => m.hasRoute).map(async mission => {
-        const response = await fetch(`data/routes/${mission.id}.json`);
+        const response = await fetch(`data/routes/${mission.id}.json`, { cache: 'no-cache' });
         if (!response.ok) throw new Error(`Route ${mission.id}: HTTP ${response.status}`);
-        return [mission.id, (await response.json()).points];
+        return [mission.id, await response.json()];
     }));
     return new Map(entries);
 }
@@ -26,46 +33,73 @@ export async function loadRoutes(missions) {
 export function createRouteLayer(viewer, ellipsoid, routeData) {
     const routes = new Map();
 
-    function addLine(positions, zIndex) {
+    function addLine(positions) {
         return viewer.entities.add({
             show: false,
-            polyline: { positions, clampToGround: true, zIndex },
+            polyline: { positions, clampToGround: true },
         });
     }
 
-    for (const [id, points] of routeData) {
+    function setStyle(pair, style) {
+        pair.casing.polyline.width = style.casingWidth;
+        pair.casing.polyline.material = style.casing;
+        pair.casing.polyline.zIndex = style.z;
+        pair.fill.polyline.width = style.fillWidth;
+        pair.fill.polyline.material = style.fill;
+        pair.fill.polyline.zIndex = style.z + 1;
+    }
+
+    for (const [id, data] of routeData) {
         const positions = Cesium.Cartesian3.fromDegreesArray(
-            points.flatMap(([lon, lat]) => [lon, lat]), ellipsoid);
-        routes.set(id, {
-            positions,
-            casing: addLine(positions, 0),
-            fill: addLine(positions, 1),
+            data.points.flatMap(([lon, lat]) => [lon, lat]), ellipsoid);
+        const segments = data.segments.map(info => {
+            const part = positions.slice(info.from, info.to + 1);
+            const segment = {
+                ...info,
+                positions: part,
+                line: { casing: addLine(part), fill: addLine(part) },
+                hover: { casing: addLine(part), fill: addLine(part) },
+                style: undefined,
+            };
+            setStyle(segment.hover, STYLE.hover);
+            return segment;
         });
+        routes.set(id, { positions, segments, shown: false });
     }
 
     let selectedId;
+    let selectedSegment; // index into the selected route's segments
+    let hovered; // { id, segment }
 
-    function applyStyle(id, style) {
-        const route = routes.get(id);
-        if (!route) return;
-        route.casing.polyline.width = style.casingWidth;
-        route.casing.polyline.material = style.casing;
-        route.fill.polyline.width = style.fillWidth;
-        route.fill.polyline.material = style.fill;
-        // The selected route is drawn above the others.
-        const lift = style === STYLE.selected ? 2 : 0;
-        route.casing.polyline.zIndex = lift;
-        route.fill.polyline.zIndex = lift + 1;
+    // Styles change only when the selection changes (a material or width
+    // change rebuilds the ground geometry); hovering only toggles `show`.
+    function restyle() {
+        for (const [id, route] of routes) {
+            route.segments.forEach((segment, index) => {
+                let style = STYLE.idle;
+                if (id === selectedId) {
+                    style = selectedSegment === undefined || selectedSegment === index
+                        ? STYLE.active : STYLE.muted;
+                }
+                if (segment.style !== style) {
+                    setStyle(segment.line, style);
+                    segment.style = style;
+                }
+            });
+        }
     }
-    for (const id of routes.keys()) applyStyle(id, STYLE.idle);
+    restyle();
 
     viewer.scene.preRender.addEventListener(() => {
         const height = Cesium.Cartesian3.magnitude(viewer.camera.positionWC) - ellipsoid.maximumRadius;
         const close = height < SHOW_BELOW_HEIGHT;
         for (const [id, route] of routes) {
-            const show = close || id === selectedId;
-            route.casing.show = show;
-            route.fill.show = show;
+            route.shown = close || id === selectedId;
+            route.segments.forEach((segment, index) => {
+                segment.line.casing.show = segment.line.fill.show = route.shown;
+                const isHovered = route.shown && hovered?.id === id && hovered.segment === index;
+                segment.hover.casing.show = segment.hover.fill.show = isHovered;
+            });
         }
     });
 
@@ -80,32 +114,50 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
     }
 
     return {
-        positionsOf(id) { return routes.get(id)?.positions; },
+        positionsOf(id, segment) {
+            const route = routes.get(id);
+            return segment === undefined ? route?.positions : route?.segments[segment]?.positions;
+        },
+        segmentsOf(id) { return routes.get(id)?.segments; },
+        isShown(id) { return Boolean(routes.get(id)?.shown); },
         // Screen-space hit test: Cesium's pick() does not reliably return
-        // ground-clamped lines, so measure the click's pixel distance to each
-        // visible route instead.
+        // ground-clamped lines, so measure the pointer's pixel distance to
+        // each visible route instead. Returns { id, segment } or undefined.
         hitTest(windowPosition, tolerancePx) {
             const occluder = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC);
             let best, bestDistance = tolerancePx;
             for (const [id, route] of routes) {
-                if (!route.fill.show) continue;
-                let previous;
-                for (const position of route.positions) {
-                    const point = occluder.isPointVisible(position)
-                        && toWindow(viewer.scene, position, new Cesium.Cartesian2());
-                    if (point && previous) {
-                        const distance = distanceToSegment(windowPosition, previous, point);
-                        if (distance < bestDistance) { best = id; bestDistance = distance; }
+                if (!route.shown) continue;
+                route.segments.forEach((segment, index) => {
+                    let previous;
+                    for (const position of segment.positions) {
+                        const point = occluder.isPointVisible(position)
+                            && toWindow(viewer.scene, position, new Cesium.Cartesian2());
+                        if (point && previous) {
+                            const distance = distanceToSegment(windowPosition, previous, point);
+                            // The selected route wins ties with routes under it.
+                            const bias = id === selectedId ? 0.5 : 0;
+                            if (distance - bias < bestDistance) {
+                                best = { id, segment: index };
+                                bestDistance = distance - bias;
+                            }
+                        }
+                        previous = point || undefined;
                     }
-                    previous = point || undefined;
-                }
+                });
             }
             return best;
         },
         select(id) {
-            if (selectedId) applyStyle(selectedId, STYLE.idle);
             selectedId = id;
-            if (id) applyStyle(id, STYLE.selected);
+            selectedSegment = undefined;
+            hovered = undefined;
+            restyle();
         },
+        selectSegment(index) {
+            selectedSegment = index;
+            restyle();
+        },
+        hover(hit) { hovered = hit; },
     };
 }

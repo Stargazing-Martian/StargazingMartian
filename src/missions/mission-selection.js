@@ -4,23 +4,29 @@ const FLY_SECONDS = 2;
 const RESET_SECONDS = 0.8;
 const VIEW_PITCH = Cesium.Math.toRadians(-60); // slightly oblique, Google Earth-like
 const ROUTELESS_RADIUS = 15_000; // metres framed around a pin without a route
+const MIN_FRAME_RADIUS = 2_500; // short segments are framed at least this wide
 const PICK_TOLERANCE_PX = 12; // how close (in pixels) a click must be to a route
 const DESELECT_ABOVE_HEIGHT = 400_000; // metres; zooming out past this leaves stage 3
 
 // Stage 3 selection: pin click selects and flies there; another pin switches
 // directly; Esc or a click on empty map clears and levels the camera again.
+// With a route selected, its segments highlight on hover; a click selects a
+// segment (the rest turn grey but stay clickable). Esc or an empty click then
+// steps back: first to the whole route, then out of the selection.
 export function createMissionSelection(viewer, ellipsoid, { pins, routes, missions }) {
     let selected;
+    let selectedSegment;
     let flying = false; // true while the camera flies to a selection
     let flightCount = 0;
 
-    function flyTo(mission) {
-        const positions = routes.positionsOf(mission.id);
+    function flyTo(mission, segment) {
+        const positions = routes.positionsOf(mission.id, segment);
         const sphere = positions
             ? Cesium.BoundingSphere.fromPoints(positions)
             : new Cesium.BoundingSphere(
                 Cesium.Cartesian3.fromDegrees(mission.lon, mission.lat, 0, ellipsoid),
                 ROUTELESS_RADIUS);
+        sphere.radius = Math.max(sphere.radius, MIN_FRAME_RADIUS);
         // Starting a new flight cancels the previous one; only the latest
         // flight may clear the flag.
         const flight = ++flightCount;
@@ -91,10 +97,23 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
     function select(mission) {
         const wasSelected = Boolean(selected);
         selected = mission;
+        selectedSegment = undefined;
         pins.setSelected(mission?.id);
         routes.select(mission?.id);
         if (mission) flyTo(mission);
         else if (wasSelected) resetTilt();
+    }
+
+    function selectSegment(index) {
+        selectedSegment = index;
+        routes.selectSegment(index);
+        flyTo(selected, index); // index undefined: back to the whole route
+    }
+
+    // One step back: segment -> whole route -> nothing.
+    function stepBack() {
+        if (selectedSegment !== undefined) selectSegment(undefined);
+        else if (selected) select(undefined);
     }
 
     // Zooming far out of a selection returns to stage 2. Only checked once the
@@ -109,14 +128,28 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
     // A route counts as its pin; anything else clears the selection.
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
     handler.setInputAction(({ position }) => {
-        const missionId = routes.hitTest(position, PICK_TOLERANCE_PX);
-        const mission = missionId && missions.find(m => m.id === missionId);
-        if (mission) select(mission);
-        else if (selected) select(undefined);
+        const hit = routes.hitTest(position, PICK_TOLERANCE_PX);
+        if (hit && hit.id === selected?.id) selectSegment(hit.segment);
+        else if (hit) select(missions.find(m => m.id === hit.id));
+        else stepBack();
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
+    // Hover: segments of the selected route highlight; any route under the
+    // cursor shows a pointer. Hit-tested at most once per frame.
+    let pointer;
+    handler.setInputAction(({ endPosition }) => {
+        if (!pointer) requestAnimationFrame(updateHover);
+        pointer = Cesium.Cartesian2.clone(endPosition);
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    function updateHover() {
+        const hit = routes.hitTest(pointer, PICK_TOLERANCE_PX);
+        pointer = undefined;
+        routes.hover(hit && hit.id === selected?.id ? hit : undefined);
+        viewer.canvas.style.cursor = hit ? 'pointer' : '';
+    }
+
     document.addEventListener('keydown', event => {
-        if (event.key === 'Escape' && selected) select(undefined);
+        if (event.key === 'Escape') stepBack();
     });
 
     return { select };

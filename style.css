@@ -164,3 +164,45 @@ body {
 .mission-pin.is-selected .mission-pin__icon { transform: scale(1.25); }
 .mission-pin.is-selected .mission-pin__icon path { fill: #0b57d0; }
 .mission-pin.is-selected { z-index: 1; }
+
+/* Route START / END dots: overlay under the pins, never catches the mouse. */
+.route-endpoints {
+    position: fixed;
+    inset: 0;
+    z-index: 9;
+    pointer-events: none;
+    overflow: hidden;
+}
+.route-endpoint {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    will-change: transform;
+}
+.route-endpoint[hidden] { display: none; }
+.route-endpoint__dot {
+    position: absolute;
+    left: -7px;
+    top: -7px;
+    width: 14px;
+    height: 14px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgb(0 0 0 / .5);
+}
+.route-endpoint--start .route-endpoint__dot { background: #fff; border: 3.5px solid #1a73e8; }
+.route-endpoint--end .route-endpoint__dot { background: #1a73e8; border: 3px solid #fff; }
+.route-endpoint__label {
+    position: absolute;
+    left: 11px;
+    top: -9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgb(15 18 24 / .85);
+    color: #fff;
+    font: 600 10.5px/14px ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .08em;
+    white-space: nowrap;
+}
