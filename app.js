@@ -1,1 +1,1 @@
-import './src/mars/mars-globe.js?v=42';
+import './src/mars/mars-globe.js?v=45';

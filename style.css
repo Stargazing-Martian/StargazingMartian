@@ -126,7 +126,8 @@ body {
 .science-notes a { color: #bad8ec; }
 #dust-map-id, #temperature-map-id { display: block; overflow-wrap: anywhere; margin-top: .4rem; }
 
-/* Mission pins: HTML overlay above the globe, Google Maps style */
+/* Mission pins: HTML overlay above the globe. A ringed dot centred on the
+   site with a label beside it; the label gets a dark chip on hover. */
 .pin-layer {
     position: fixed;
     inset: 0;
@@ -154,33 +155,41 @@ body {
 .mission-pin[hidden] { display: none; }
 .mission-pin__icon {
     position: absolute;
-    left: -14px;
-    bottom: 0;
-    width: 28px;
-    height: 36px;
-    overflow: visible;
-    filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / .45));
+    left: -9px;
+    top: -9px;
+    width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgb(20 17 15 / .55);
+    border: 2px solid #f6f1ea;
+    box-shadow: 0 1px 4px rgb(0 0 0 / .55);
+    transition: transform .18s cubic-bezier(.2, .9, .3, 1.3), box-shadow .18s ease;
 }
-.mission-pin__icon path {
-    fill: #1a73e8;
-    stroke: #fff;
-    stroke-width: 1.5;
+.mission-pin__core {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f6f1ea;
 }
-.mission-pin__icon circle { fill: #fff; }
+/* Rovers: a second outer ring, hinting at the route they drove. */
+.mission-pin--rover .mission-pin__icon { box-shadow: 0 0 0 3px rgb(246 241 234 / .28), 0 1px 4px rgb(0 0 0 / .55); }
+.mission-pin--failed .mission-pin__icon { border-color: #ff9b8a; }
+.mission-pin--failed .mission-pin__core { background: #ff9b8a; }
 .mission-pin__label {
     position: absolute;
-    right: 17px;
-    bottom: 14px;
+    left: 14px;
+    top: -10px;
+    padding: 2px 7px;
+    border-radius: 6px;
     white-space: nowrap;
-    font: 600 14px/1 var(--font-sans);
-    letter-spacing: .01em;
-    color: #1558d6;
-    /* White halo keeps the text readable on any part of Mars. */
-    text-shadow:
-        -1.5px -1.5px 0 #fff, 0 -1.5px 0 #fff, 1.5px -1.5px 0 #fff,
-        -1.5px 0 0 #fff, 1.5px 0 0 #fff,
-        -1.5px 1.5px 0 #fff, 0 1.5px 0 #fff, 1.5px 1.5px 0 #fff,
-        0 0 4px #fff;
+    font: 600 13.5px/16px var(--font-sans);
+    letter-spacing: .005em;
+    color: #f6f1ea;
+    text-shadow: 0 0 3px #000, 0 0 8px rgb(0 0 0 / .8), 0 1px 2px #000;
+    transition: background-color .18s ease, text-shadow .18s ease;
 }
 
 /* Pins are clickable; the layer itself lets clicks through to the globe. */
@@ -189,11 +198,41 @@ body {
     pointer-events: auto;
     cursor: pointer;
 }
-.mission-pin__icon { transition: transform .15s ease; transform-origin: 50% 100%; }
-.mission-pin:hover .mission-pin__icon { transform: scale(1.1); }
-.mission-pin.is-selected .mission-pin__icon { transform: scale(1.25); }
-.mission-pin.is-selected .mission-pin__icon path { fill: #0b57d0; }
+.mission-pin:hover .mission-pin__icon { transform: scale(1.25); }
+.mission-pin:hover .mission-pin__label,
+.mission-pin.is-selected .mission-pin__label {
+    background: rgb(12 10 9 / .82);
+    text-shadow: none;
+}
+.mission-pin:hover,
 .mission-pin.is-selected { z-index: 1; }
+.mission-pin.is-selected .mission-pin__icon { transform: scale(1.3); border-color: #4dabff; }
+.mission-pin.is-selected .mission-pin__core { background: #4dabff; }
+/* Selected: a soft ring that breathes out. */
+.mission-pin.is-selected .mission-pin__icon::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 2px solid #4dabff;
+    animation: pin-pulse 1.8s ease-out infinite;
+}
+@keyframes pin-pulse {
+    from { transform: scale(1); opacity: .8; }
+    to { transform: scale(2.4); opacity: 0; }
+}
+/* Entrance: pins pop in one after another when stage 2b starts. */
+.pin-layer.is-visible .mission-pin__icon,
+.pin-layer.is-visible .mission-pin__label {
+    animation: pin-in .45s cubic-bezier(.2, .9, .3, 1.2) both;
+    animation-delay: calc(var(--i, 0) * 45ms);
+}
+@keyframes pin-in { from { opacity: 0; transform: scale(.4); } }
+@media (prefers-reduced-motion: reduce) {
+    .pin-layer.is-visible .mission-pin__icon,
+    .pin-layer.is-visible .mission-pin__label,
+    .mission-pin.is-selected .mission-pin__icon::after { animation: none; }
+}
 
 /* Route START / END dots: overlay under the pins, never catches the mouse. */
 .route-endpoints {
@@ -628,3 +667,149 @@ body {
 }
 .mission-panel[data-view="corridor"] .stats { grid-template-columns: repeat(3, 1fr); }
 #mars-globe:not([data-surface-ready]) .cesium-widget canvas { opacity: 0; }
+
+/* Logo, top-left, in solid cream white. Showcase: large mark with the
+   MARTIAN wordmark under it, both left-aligned. Exploring: small mark with
+   the wordmark beside it on a small frosted pill. Positions animate, so the
+   lock-up glides from one layout to the other. */
+#site-logo {
+    --mark: 112px;
+    --word: 264px;
+    --gap: 12px;
+    position: fixed;
+    top: 40px;
+    left: 48px;
+    z-index: 30;
+    display: block;
+    width: var(--mark);
+    height: var(--mark);
+    color: #f3ece2;
+    transition: top .7s cubic-bezier(.2, .8, .2, 1), left .7s cubic-bezier(.2, .8, .2, 1),
+                width .7s cubic-bezier(.2, .8, .2, 1), height .7s cubic-bezier(.2, .8, .2, 1);
+    animation: logo-in 1s ease-out .2s both;
+}
+#site-logo svg { fill: currentColor; filter: drop-shadow(0 2px 12px rgb(0 0 0 / .45)); }
+#site-logo .logo-mark { display: block; width: 100%; height: 100%; }
+#site-logo .logo-word {
+    position: absolute;
+    display: block;
+    width: var(--word);
+    height: calc(var(--word) * 23 / 287);
+    top: calc(100% + 22px);
+    left: 0;
+    transition: top .7s cubic-bezier(.2, .8, .2, 1), left .7s cubic-bezier(.2, .8, .2, 1),
+                width .7s cubic-bezier(.2, .8, .2, 1), height .7s cubic-bezier(.2, .8, .2, 1);
+}
+/* Frosted pill behind the small lock-up; only while exploring. */
+#site-logo::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: -8px;
+    left: -12px;
+    width: calc(var(--mark) + var(--gap) + var(--word) + 24px);
+    height: calc(var(--mark) + 16px);
+    border-radius: 999px;
+    background: rgb(12 10 9 / .42);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+    border: .5px solid rgb(255 255 255 / .14);
+    opacity: 0;
+    transform: scale(.92);
+    transform-origin: left center;
+    transition: opacity .4s ease .35s, transform .4s ease .35s;
+    pointer-events: none;
+}
+.is-exploring #site-logo { --mark: 34px; --word: 132px; top: 22px; left: 30px; }
+.is-exploring #site-logo::before { opacity: 1; transform: none; }
+.is-exploring #site-logo svg { filter: none; }
+.is-exploring #site-logo .logo-word {
+    top: calc((var(--mark) - var(--word) * 23 / 287) / 2);
+    left: calc(var(--mark) + var(--gap));
+}
+#site-logo:focus-visible { outline: 2px solid #4dabff; outline-offset: 6px; border-radius: 8px; }
+@keyframes logo-in { from { opacity: 0; transform: translateY(-8px); } }
+@media (max-width: 480px) {
+    #site-logo { --mark: 72px; --word: 180px; top: 20px; left: 20px; }
+    .is-exploring #site-logo { --mark: 28px; --word: 108px; top: 18px; left: 24px; }
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Side panel (terrain / science maps): same frosted dark card and type as
+   the mission panel. */
+#terrain-panel {
+    top: 16px;
+    right: 16px;
+    width: min(300px, calc(100vw - 32px));
+    padding: 14px 16px 16px;
+    color: #f6f1ea;
+    background: rgb(12 10 9 / .82);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    backdrop-filter: blur(22px) saturate(1.4);
+    border: .5px solid rgb(255 255 255 / .15);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgb(0 0 0 / .35);
+    font: 13px/1.45 var(--font-sans);
+}
+#terrain-panel fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+}
+#terrain-panel legend {
+    padding: 0 0 6px;
+    font: 600 11px/1 var(--font-mono);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #b3a899;
+}
+#terrain-panel label { color: #b3a899; font-size: 12px; }
+#terrain-panel input[type="text"],
+#terrain-panel select,
+#terrain-panel button {
+    padding: 8px 10px;
+    font: inherit;
+    color: #f6f1ea;
+    background: rgb(255 255 255 / .07);
+    border: .5px solid rgb(255 255 255 / .16);
+    border-radius: 8px;
+    transition: background-color .15s ease, border-color .15s ease, transform .1s ease;
+}
+#terrain-panel select:hover,
+#terrain-panel button:hover:not(:disabled) { background: rgb(255 255 255 / .12); border-color: rgb(255 255 255 / .28); }
+#terrain-panel button:active:not(:disabled) { transform: scale(.98); }
+#terrain-panel select:focus-visible,
+#terrain-panel button:focus-visible,
+#terrain-panel input:focus-visible { outline: 2px solid #4dabff; outline-offset: 1px; }
+#terrain-panel select option { color: #17130e; }
+.scientific-map-legend { background: rgb(255 255 255 / .05); border-radius: 8px; }
+.science-badge { color: #9fc6e0; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .03em; }
+#science-map-controls { margin: 0; }
+.network-node__label { font-family: var(--font-sans); }
+.cesium-credit-textContainer, .cesium-credit-lightbox { font-family: var(--font-sans); }
+
+/* Small, quiet interactions. */
+.mission-panel .primary { transition: background-color .15s ease, transform .1s ease; }
+.mission-panel .primary:active,
+.mission-panel .segment-row:active { transform: scale(.985); }
+.mission-panel .segment-row { transition: background-color .15s ease, box-shadow .15s ease, transform .1s ease; }
+.mission-panel .close,
+.mission-panel .back { transition: background-color .15s ease; }
+.mission-panel .tick { transition: opacity .15s ease, transform .2s ease; }
+.mission-panel .tick.is-hovered { transform: scaleY(1.25); }
+.mission-panel .photo { transition: transform .15s ease; }
+.mission-panel .photo:active { transform: scale(.97); }
+.network-node__dot { transition: transform .2s ease; }
+/* Spacing between the side panel's sections (terrain, mission environment, science map). */
+#terrain-panel > fieldset,
+#terrain-panel > details { margin-top: 14px; }
+#mission-environment > summary { cursor: pointer; font-weight: 600; }

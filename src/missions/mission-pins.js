@@ -8,11 +8,9 @@ const Cesium = globalThis.Cesium;
 const SHOW_BELOW = 10_500_000;
 const HIDE_ABOVE = 11_500_000;
 
-const PIN_SVG = `
-<svg class="mission-pin__icon" viewBox="0 0 28 36" aria-hidden="true">
-  <path d="M14 34.5C14 34.5 3.5 22.6 3.5 13.8a10.5 10.5 0 0 1 21 0c0 8.8-10.5 20.7-10.5 20.7z"/>
-  <circle cx="14" cy="13.8" r="4.4"/>
-</svg>`;
+// Marker: a small ringed dot centred on the site (rovers get an extra ring,
+// failed missions a coral dot), with a label beside it.
+const PIN_MARKUP = `<span class="mission-pin__icon" aria-hidden="true"><span class="mission-pin__core"></span></span>`;
 
 // Pins are HTML/SVG on top of the Cesium canvas, so the browser draws them
 // at full screen resolution (Cesium renders the scene at 1x on Retina).
@@ -33,15 +31,16 @@ export function createMissionPins(viewer, ellipsoid, missions, { onSelect } = {}
         if (mission) onSelect?.(mission);
     });
 
-    const items = missions.map(mission => {
+    const items = missions.map((mission, index) => {
         const element = document.createElement('div');
-        element.className = 'mission-pin';
+        element.className = `mission-pin mission-pin--${mission.type}`;
         element.dataset.id = mission.id;
+        element.style.setProperty('--i', index); // staggered entrance
         const label = document.createElement('span');
         label.className = 'mission-pin__label';
         label.textContent = mission.name;
         element.append(label);
-        element.insertAdjacentHTML('beforeend', PIN_SVG);
+        element.insertAdjacentHTML('beforeend', PIN_MARKUP);
         layer.appendChild(element);
         return {
             element,
