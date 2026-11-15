@@ -1,4 +1,4 @@
-import { requestSurfaceRender } from '../mars/request-surface-render.js';
+import { requestSurfaceRender } from '../mars/request-surface-render.js?v=2';
 // Terrain remains active; display controls change colour and visual height only.
 export function createTerrainControls(viewer, imagery) {
     const Cesium = globalThis.Cesium;

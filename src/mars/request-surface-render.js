@@ -3,7 +3,7 @@
 const pending = new WeakMap();
 export function requestSurfaceRender(scene) {
     if (pending.has(scene)) return;
-    let frames = 3;
+    let frames = 8;
     const remove = scene.postRender.addEventListener(() => {
         if (--frames <= 0) { remove(); pending.delete(scene); return; }
         queueMicrotask(() => scene.requestRender());

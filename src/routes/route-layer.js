@@ -1,3 +1,4 @@
+import { facingTest } from '../mars/surface-point.js?v=2';
 import { createSurfacePath } from './surface-path.js?v=1';
 const Cesium = globalThis.Cesium;
 
@@ -118,7 +119,7 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
         for (const [id, route] of routes) {
             const compatible = terrainProvider && route.data.render.terrainVersion === terrainProvider.stargazingVersion;
             const anchor = ellipsoid.scaleToGeodeticSurface(route.positions[0], new Cesium.Cartesian3());
-            const facing = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC).isPointVisible(anchor);
+            const facing = facingTest(viewer, ellipsoid)(anchor);
             route.shown = Boolean(compatible && facing && (close || id === selectedId));
             route.path.update(route.shown);
             route.segments.forEach(segment => { segment.line.show = route.shown; });
@@ -149,7 +150,7 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
         // ground-clamped lines, so measure the pointer's pixel distance to
         // each visible route instead. Returns { id, segment } or undefined.
         hitTest(windowPosition, tolerancePx) {
-            const occluder = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC);
+            const occluder = { isPointVisible: facingTest(viewer, ellipsoid) };
             let best, bestDistance = tolerancePx;
             for (const [id, route] of routes) {
                 if (!route.shown) continue;

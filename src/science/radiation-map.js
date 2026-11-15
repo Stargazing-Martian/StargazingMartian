@@ -1,5 +1,5 @@
 import { shieldingProxy, radiationColor } from './radiation-data.js';
-import { requestSurfaceRender } from '../mars/request-surface-render.js';
+import { requestSurfaceRender } from '../mars/request-surface-render.js?v=2';
 
 export function createRadiationMap(viewer, ellipsoid, controls) {
     const C = globalThis.Cesium;
@@ -47,6 +47,7 @@ export function createRadiationMap(viewer, ellipsoid, controls) {
                 controls.setScientificMode(false);
             }
             document.getElementById('radiation-map-panel').hidden = true;
+            requestSurfaceRender(viewer.scene);
         },
         inspect(position) {
             if (!active || !model) return;

@@ -8,3 +8,19 @@ export function surfacePoint(viewer, ellipsoid, cartographic, result) {
     return C.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude,
         Number.isFinite(height) ? height : 0, ellipsoid, result);
 }
+
+// Which world points face the camera. Cesium's ellipsoidal occluder assumes
+// the camera is above the ellipsoid; with 5x relief in Gale or Jezero the
+// drawn ground lies kilometres below it, a zoomed-in camera follows it down,
+// and the occluder then hides every route and marker. Close to the surface,
+// use distance instead (nothing within ~2,000 km can be on the far side).
+export function facingTest(viewer, ellipsoid) {
+    const C = globalThis.Cesium;
+    const camera = viewer.camera.positionWC;
+    const height = C.Cartesian3.magnitude(camera) - ellipsoid.maximumRadius;
+    if (height < 300_000) {
+        return C.Cartesian3.distance ? point => C.Cartesian3.distance(camera, point) < 2_000_000 : () => true;
+    }
+    const occluder = new C.EllipsoidalOccluder(ellipsoid, camera);
+    return point => occluder.isPointVisible(point);
+}

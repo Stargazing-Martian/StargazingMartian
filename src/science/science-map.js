@@ -1,8 +1,9 @@
+import { requestSurfaceRender } from '../mars/request-surface-render.js?v=2';
 import { DUST_STOPS, dustPixels, fetchDustProduct, sampleDust } from './dust-data.js?v=2';
 import { TEMPERATURE_STOPS, temperaturePixels, fetchTemperatureProduct,
     sampleTemperature, kelvinToCelsius } from './temperature-data.js?v=2';
 import { matchingPeriods } from './mission-environment-data.js?v=2';
-import { createRadiationMap } from './radiation-map.js?v=1';
+import { createRadiationMap } from './radiation-map.js?v=2';
 
 const formatDate = value => new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
@@ -112,7 +113,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
             view.periodText.textContent = '';
             view.retryButton.hidden = true;
         }
-        viewer.scene.requestRender();
+        requestSurfaceRender(viewer.scene);
     }
 
     async function refresh() {
@@ -190,7 +191,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
                     detail +
                     '\nPeriod overlap only; not weather measured on the same day at the same position.';
             }
-            viewer.scene.requestRender();
+            requestSurfaceRender(viewer.scene);
         } catch (error) {
             if (current !== generation || destroyed) return;
             clearLayer();

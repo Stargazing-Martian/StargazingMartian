@@ -1,19 +1,19 @@
 import { createSurfaceImagery } from '../nasa/nasa-layers.js?v=2';
 import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, terrainTimeoutMs } from './config.js?v=7';
-import { createTerrainControls } from '../ui/terrain-controls.js?v=10';
+import { createTerrainControls } from '../ui/terrain-controls.js?v=11';
 import { createMissionEnvironment } from '../ui/mission-environment.js?v=2';
-import { createScienceMaps } from '../science/science-map.js?v=4';
+import { createScienceMaps } from '../science/science-map.js?v=5';
 import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=7';
 import { createMarsSkybox } from './mars-skybox.js';
 import { MISSIONS } from '../missions/mission-data.js?v=12';
-import { createMissionPins } from '../missions/mission-pins.js?v=12';
+import { createMissionPins } from '../missions/mission-pins.js?v=13';
 import { createMissionSelection } from '../missions/mission-selection.js?v=27';
-import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=29';
-import { createRouteEndpoints } from '../routes/route-endpoints.js?v=2';
+import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=30';
+import { createRouteEndpoints } from '../routes/route-endpoints.js?v=3';
 import { createMissionPanel } from '../ui/mission-panel.js?v=6';
 import { createPhotoViewer } from '../ui/photo-viewer.js?v=5';
-import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=4';
+import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=5';
 import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
 import { createAbout } from '../ui/about.js?v=1';
 
@@ -137,11 +137,35 @@ createAbout();
     // The globe opens at true height (1x). Selecting a site or route switches
     // to 5x relief so the local terrain reads; leaving the selection goes back.
     const reliefScale = document.getElementById('relief-scale');
+    // 5x is exaggerated around the selected site's own ground height, not
+    // around 0 m: in deep craters (Gale, Jezero) 0 m-based relief lifts the
+    // drawn ground kilometres away from the real one, and wheel-zoom (which
+    // aims at the real ground) then slides the view off the route.
+    // Ground height of each rover site in source metres, from its prepared
+    // route (the tiles there may not be loaded yet when a pin is clicked).
+    const siteHeights = new Map([...(await routeData)].map(([id, data]) => [id, data.render?.points?.[0]?.[2]]));
+    let reliefMission;
     selection.onChange(({ mission }) => {
+        if (mission === reliefMission) return;
+        reliefMission = mission;
+        let relative = 0;
+        if (mission && Number.isFinite(siteHeights.get(mission.id))) {
+            relative = siteHeights.get(mission.id);
+        } else if (mission) {
+            const site = Cesium.Cartographic.fromDegrees(mission.lon, mission.lat);
+            const scale = viewer.scene.verticalExaggeration;
+            const shown = viewer.scene.globe.getHeight(site);
+            if (Number.isFinite(shown)) {
+                const base = viewer.scene.verticalExaggerationRelativeHeight;
+                relative = (shown - base) / scale + base; // back to source metres
+            }
+        }
+        viewer.scene.verticalExaggerationRelativeHeight = relative;
         const scale = mission ? '5' : '1';
-        if (reliefScale.value === scale) return;
-        reliefScale.value = scale;
-        reliefScale.dispatchEvent(new Event('change', { bubbles: true }));
+        if (reliefScale.value !== scale) {
+            reliefScale.value = scale;
+            reliefScale.dispatchEvent(new Event('change', { bubbles: true }));
+        } else viewer.scene.requestRender();
     });
 
     let generation = 0;
