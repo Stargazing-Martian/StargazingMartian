@@ -14,6 +14,7 @@ import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
 import { createMissionPanel } from '../ui/mission-panel.js?v=5';
 import { createPhotoViewer } from '../ui/photo-viewer.js?v=5';
 import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=3';
+import { createMapModePicker } from '../ui/map-mode-picker.js?v=1';
 
 (async () => {
     const container = document.getElementById("mars-globe");
@@ -101,6 +102,7 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
     const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));
     const controls = createTerrainControls(viewer, imagery);
     const scienceMaps = createScienceMaps(viewer, ellipsoid, controls);
+    createMapModePicker();
     environment = createMissionEnvironment(MISSIONS, scienceMaps, async mission => {
         await enterInteractiveMode();
         selection.select(mission);

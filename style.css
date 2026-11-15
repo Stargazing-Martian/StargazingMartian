@@ -812,3 +812,60 @@ body {
 #terrain-panel > fieldset,
 #terrain-panel > details { margin-top: 14px; }
 #mission-environment > summary { cursor: pointer; font-weight: 600; }
+
+/* Right panel, same language as the mission panel: title, then the map-mode
+   picker as three preview tiles with mono captions. */
+#terrain-panel {
+    width: min(340px, calc(100vw - 32px));
+    padding: 18px 20px 20px;
+    background: rgb(12 10 9 / .9);
+}
+#terrain-panel .side-title {
+    margin: 0 0 12px;
+    font: 700 24px/1.15 var(--font-sans);
+    letter-spacing: -.01em;
+    color: #f6f1ea;
+}
+.map-modes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 4px;
+}
+#terrain-panel .map-mode {
+    display: grid;
+    gap: 7px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #b3a899;
+    font: 500 11px/1.2 var(--font-mono);
+    text-align: center;
+    cursor: pointer;
+}
+#terrain-panel .map-mode:hover:not(:disabled) { background: none; }
+.map-mode img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1.55;
+    object-fit: cover;
+    border-radius: 10px;
+    outline: 1px solid rgb(255 255 255 / .1);
+    outline-offset: -1px;
+    transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    filter: saturate(.85) brightness(.85);
+}
+.map-mode:hover img { transform: translateY(-2px); filter: none; }
+.map-mode[aria-checked="true"] { color: #f6f1ea; }
+.map-mode[aria-checked="true"] img {
+    filter: none;
+    box-shadow: 0 0 0 2px #f6f1ea, 0 6px 18px rgb(0 0 0 / .45);
+}
+.map-mode:active img { transform: scale(.97); }
+#terrain-panel .map-mode:focus-visible { outline: none; }
+#terrain-panel .map-mode:focus-visible img { box-shadow: 0 0 0 2px #4dabff; }
+#science-map-context { margin: 10px 0 0; }
+/* Terrain status and surface options sit below the picker, quieter. */
+#terrain-panel #terrain-status { margin: 16px 0 4px; padding-top: 12px; border-top: .5px solid rgb(255 255 255 / .12); font-size: 12px; }
+#terrain-panel #terrain-coverage { margin-top: 0; }
