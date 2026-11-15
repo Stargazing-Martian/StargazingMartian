@@ -16,6 +16,11 @@ const DESELECT_ABOVE_HEIGHT = 400_000; // metres; zooming out past this leaves s
 export function createMissionSelection(viewer, ellipsoid, { pins, routes, missions }) {
     let selected;
     let selectedSegment;
+    let hoveredSegment;
+    // The left panel listens to every change of mission, segment or hover.
+    const listeners = new Set();
+    const notify = () => listeners.forEach(listener =>
+        listener({ mission: selected, segment: selectedSegment, hovered: hoveredSegment }));
     let flying = false; // true while the camera flies to a selection
     let flightCount = 0;
 
@@ -100,14 +105,29 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
         selectedSegment = undefined;
         pins.setSelected(mission?.id);
         routes.select(mission?.id);
+        hoveredSegment = undefined;
         if (mission) flyTo(mission);
         else if (wasSelected) resetTilt();
+        notify();
     }
 
     function selectSegment(index) {
         selectedSegment = index;
         routes.selectSegment(index);
+        // The panel swaps its view, so the row under the cursor is gone
+        // without a mouseout; drop the stale hover with it.
+        hoveredSegment = undefined;
+        routes.hover(undefined);
         flyTo(selected, index); // index undefined: back to the whole route
+        notify();
+    }
+
+    // Hover from the map or from the panel's segment list.
+    function hoverSegment(index) {
+        if (index === hoveredSegment) return;
+        hoveredSegment = index;
+        routes.hover(index === undefined ? undefined : { id: selected.id, segment: index });
+        notify();
     }
 
     // One step back: segment -> whole route -> nothing.
@@ -144,7 +164,7 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
     function updateHover() {
         const hit = routes.hitTest(pointer, PICK_TOLERANCE_PX);
         pointer = undefined;
-        routes.hover(hit && hit.id === selected?.id ? hit : undefined);
+        if (selected) hoverSegment(hit?.id === selected.id ? hit.segment : undefined);
         viewer.canvas.style.cursor = hit ? 'pointer' : '';
     }
 
@@ -152,5 +172,11 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
         if (event.key === 'Escape') stepBack();
     });
 
-    return { select };
+    return {
+        select,
+        selectSegment,
+        hoverSegment,
+        stepBack,
+        onChange(listener) { listeners.add(listener); },
+    };
 }

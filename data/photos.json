@@ -1,0 +1,253 @@
+{
+ "perseverance": [
+  {
+   "id": "PIA24264",
+   "type": "pano",
+   "title": "Mastcam-Z's First 360-Degree Panorama",
+   "credit": "NASA/JPL-Caltech/MSSS/ASU",
+   "src": "assets/photos/PIA24264.jpg",
+   "thumb": "assets/photos/PIA24264-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA24264",
+   "haov": 360,
+   "vaov": 95.5
+  },
+  {
+   "id": "PIA26369",
+   "type": "pano",
+   "title": "Perseverance Captures 'Bright Angel' in 360 Degrees",
+   "credit": "NASA/JPL-Caltech/ASU/MSSS",
+   "src": "assets/photos/PIA26369.jpg",
+   "thumb": "assets/photos/PIA26369-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA26369",
+   "haov": 360,
+   "vaov": 88.0
+  },
+  {
+   "id": "PIA24422",
+   "type": "pano",
+   "title": "Perseverance Navcams 360-Degree Panorama",
+   "credit": "NASA/JPL-Caltech",
+   "src": "assets/photos/PIA24422.jpg",
+   "thumb": "assets/photos/PIA24422-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA24422",
+   "haov": 360,
+   "vaov": 106.2
+  }
+ ],
+ "curiosity": [
+  {
+   "id": "PIA20332",
+   "type": "pano",
+   "title": "Full-Circle Vista from Naukluft Plateau on Mars",
+   "credit": "NASA/JPL-Caltech/MSSS",
+   "src": "assets/photos/PIA20332.jpg",
+   "thumb": "assets/photos/PIA20332-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA20332",
+   "haov": 360,
+   "vaov": 82.7
+  },
+  {
+   "id": "PIA16029",
+   "type": "pano",
+   "title": "Gale Crater Vista, in Glorious Color",
+   "credit": "NASA/JPL-Caltech/MSSS",
+   "src": "assets/photos/PIA16029.jpg",
+   "thumb": "assets/photos/PIA16029-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA16029",
+   "haov": 360,
+   "vaov": 74.4
+  },
+  {
+   "id": "PIA16077",
+   "type": "flat",
+   "title": "The Heights of Mount Sharp",
+   "credit": "NASA/JPL-Caltech",
+   "src": "assets/photos/PIA16077.jpg",
+   "thumb": "assets/photos/PIA16077-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA16077"
+  }
+ ],
+ "opportunity": [
+  {
+   "id": "PIA11754",
+   "type": "pano",
+   "title": "Full-Circle Santorini Panorama from Opportunity",
+   "credit": "NASA/JPL/Cornell University",
+   "src": "assets/photos/PIA11754.jpg",
+   "thumb": "assets/photos/PIA11754-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA11754",
+   "haov": 360,
+   "vaov": 62.3
+  },
+  {
+   "id": "PIA16122",
+   "type": "pano",
+   "title": "Opportunity Surroundings on 3,000th Sol",
+   "credit": "NASA/JPL-Caltech",
+   "src": "assets/photos/PIA16122.jpg",
+   "thumb": "assets/photos/PIA16122-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA16122",
+   "haov": 360,
+   "vaov": 46.2
+  }
+ ],
+ "spirit": [
+  {
+   "id": "PIA11746",
+   "type": "pano",
+   "title": "Full-Circle Bonestell Panorama from Spirit",
+   "credit": "NASA/JPL/Cornell University",
+   "src": "assets/photos/PIA11746.jpg",
+   "thumb": "assets/photos/PIA11746-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA11746",
+   "haov": 360,
+   "vaov": 69.7
+  },
+  {
+   "id": "PIA16440",
+   "type": "pano",
+   "title": "Spirit Mars Rover in McMurdo Panorama",
+   "credit": "NASA/JPL-Caltech/Cornell Univ./Arizona State Univ.",
+   "src": "assets/photos/PIA16440.jpg",
+   "thumb": "assets/photos/PIA16440-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA16440",
+   "haov": 360,
+   "vaov": 101.8
+  }
+ ],
+ "pathfinder": [
+  {
+   "id": "PIA00662",
+   "type": "pano",
+   "title": "360-degree b/w Monster",
+   "credit": "NASA/JPL",
+   "src": "assets/photos/PIA00662.jpg",
+   "thumb": "assets/photos/PIA00662-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA00662",
+   "haov": 360,
+   "vaov": 63.8
+  },
+  {
+   "id": "PIA01409",
+   "type": "flat",
+   "title": "Barnacle Bill in Super Resolution from Super Panorama",
+   "credit": "NASA/JPL",
+   "src": "assets/photos/PIA01409.jpg",
+   "thumb": "assets/photos/PIA01409-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA01409"
+  }
+ ],
+ "viking-1": [
+  {
+   "id": "PIA03165",
+   "type": "flat",
+   "title": "Afternoon on Chryse Planitia - Viking Lander 1 Camera 1 Mosaic",
+   "credit": "NASA/JPL",
+   "src": "assets/photos/PIA03165.jpg",
+   "thumb": "assets/photos/PIA03165-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA03165"
+  },
+  {
+   "id": "PIA00567",
+   "type": "flat",
+   "title": "Sunset at the Viking Lander 1 Site",
+   "credit": "NASA/JPL",
+   "src": "assets/photos/PIA00567.jpg",
+   "thumb": "assets/photos/PIA00567-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA00567"
+  },
+  {
+   "id": "PIA00563",
+   "type": "flat",
+   "title": "First Color Image From Viking Lander 1",
+   "credit": "NASA/JPL",
+   "src": "assets/photos/PIA00563.jpg",
+   "thumb": "assets/photos/PIA00563-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA00563"
+  }
+ ],
+ "viking-2": [
+  {
+   "id": "PIA09509",
+   "type": "flat",
+   "title": "Plains West of Viking Lander 2",
+   "credit": "NASA/JPL/Univ. of Arizona",
+   "src": "assets/photos/PIA09509.jpg",
+   "thumb": "assets/photos/PIA09509-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA09509"
+  },
+  {
+   "id": "PIA00573",
+   "type": "flat",
+   "title": "Frost at the Viking Lander 2 Site",
+   "credit": "NASA/JPL",
+   "src": "assets/photos/PIA00573.jpg",
+   "thumb": "assets/photos/PIA00573-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA00573"
+  },
+  {
+   "id": "PIA00568",
+   "type": "flat",
+   "title": "First Color Image of the Viking Lander 2 Site",
+   "credit": "NASA/JPL",
+   "src": "assets/photos/PIA00568.jpg",
+   "thumb": "assets/photos/PIA00568-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA00568"
+  }
+ ],
+ "phoenix": [
+  {
+   "id": "PIA13804",
+   "type": "pano",
+   "title": "Mars Panorama of Phoenix Landing Site and Lander Deck",
+   "credit": "NASA/JPL-Caltech/University of Arizona/Texas A&M University",
+   "src": "assets/photos/PIA13804.jpg",
+   "thumb": "assets/photos/PIA13804-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA13804",
+   "haov": 360,
+   "vaov": 85.0
+  }
+ ],
+ "insight": [
+  {
+   "id": "PIA23203",
+   "type": "flat",
+   "title": "InSight's Dusty Selfie",
+   "credit": "NASA/JPL-Caltech",
+   "src": "assets/photos/PIA23203.jpg",
+   "thumb": "assets/photos/PIA23203-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA23203"
+  },
+  {
+   "id": "PIA22871",
+   "type": "flat",
+   "title": "Full View of InSight's Deck and Two Science Instruments",
+   "credit": "NASA/JPL-Caltech",
+   "src": "assets/photos/PIA22871.jpg",
+   "thumb": "assets/photos/PIA22871-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA22871"
+  }
+ ],
+ "schiaparelli": [
+  {
+   "id": "PIA21132",
+   "type": "flat",
+   "title": "Schiaparelli Impact Site on Mars, in Color",
+   "credit": "NASA/JPL-Caltech/Univ. of Arizona",
+   "src": "assets/photos/PIA21132.jpg",
+   "thumb": "assets/photos/PIA21132-thumb.jpg",
+   "source": "https://images.nasa.gov/details/PIA21132"
+  }
+ ],
+ "deep-space-2": [
+  {
+   "id": "KSC-98pc1648",
+   "type": "flat",
+   "title": "Deep Space 2 probes on Mars Polar Lander before launch (1998)",
+   "credit": "NASA",
+   "src": "assets/photos/KSC-98pc1648.jpg",
+   "thumb": "assets/photos/KSC-98pc1648-thumb.jpg",
+   "source": "https://images.nasa.gov/details/KSC-98pc1648"
+  }
+ ]
+}

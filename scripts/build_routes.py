@@ -23,6 +23,37 @@ SOURCES = {
 }
 # MSL_traverse.json has no sol; each drive's end point matches a waypoint.
 MSL_WAYPOINTS = 'https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json'
+# Rover attitude (tilt) at every drive end: used as a terrain-slope proxy.
+WAYPOINTS = {
+    'perseverance': 'https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json',
+    'curiosity': MSL_WAYPOINTS,
+}
+
+# Difficulty for an astronaut on foot: 'easy' | 'medium' | 'hard'.
+# Where the rover logged its tilt, the 90th-percentile tilt of the segment
+# sets the level. Spirit and Opportunity logged no tilt, so their level comes
+# from terrain notes and incidents in the mission record. A note can only
+# raise a level, never lower it.
+TILT_MEDIUM = 9.0   # degrees, p90 tilt
+TILT_HARD = 15.0
+NOTES = {
+    'curiosity': {
+        'Rapid Transit to Mount Sharp': ('medium', 'Sharp, embedded rocks punctured Curiosity\'s wheels here, and the Hidden Valley sand trap forced a detour.'),
+    },
+    'opportunity': {
+        'Eagle and Endurance Craters': ('medium', 'Steep inner slopes of Endurance crater.'),
+        'Meridiani Plains and Purgatory': ('medium', 'Flat plains, but a loose sand ripple ("Purgatory") trapped Opportunity for five weeks.'),
+        'Victoria Crater': ('medium', 'Opportunity drove down into Victoria crater and back out along its slopes.'),
+        'Trek to Endeavour': ('easy', 'Long, flat plains crossing between sand ripples.'),
+        'Endeavour Rim': ('hard', 'Steep crater-rim slopes; Opportunity\'s steepest drives were here.'),
+    },
+    'spirit': {
+        'Gusev Plains and Bonneville': ('easy', 'Flat, rocky plains around Bonneville crater.'),
+        'Columbia Hills': ('medium', 'Long climb up Husband Hill over rocky slopes.'),
+        'Home Plate and Troy': ('hard', 'Spirit broke through a crust into soft sand at Troy and never got out.'),
+    },
+}
+LEVELS = ['easy', 'medium', 'hard']
 
 # Science phases: (first sol, name). Sol boundaries are approximate, taken
 # from mission campaign summaries; a phase runs until the next one starts.
@@ -211,6 +242,29 @@ def length_km(points):
     return sum(math.dist(a, b) for a, b in zip(xy, xy[1:])) / 1000
 
 
+def score_segments(mission, segments, waypoints):
+    """Adds difficulty, its basis, reasons and metrics to each segment."""
+    starts = [seg['sols'][0] for seg in segments] + [math.inf]
+    for k, seg in enumerate(segments):
+        level, reasons, seg['basis'] = 'easy', [], 'mission-record'
+        if waypoints:
+            inside = [w for w in waypoints if starts[k] <= w['sol'] < starts[k + 1] and w.get('tilt') is not None]
+            tilts = sorted(w['tilt'] for w in inside)
+            elevations = [w['elev_geoid'] for w in inside]
+            p90 = tilts[int(len(tilts) * 0.9)]
+            climb = sum(max(0, b - a) for a, b in zip(elevations, elevations[1:]))
+            seg['metrics'] = {'tiltP90': round(p90, 1), 'tiltMax': round(tilts[-1], 1), 'climbM': round(climb)}
+            seg['basis'] = 'rover-tilt'
+            level = 'hard' if p90 >= TILT_HARD else 'medium' if p90 >= TILT_MEDIUM else 'easy'
+            reasons.append(f'Rover tilt: {p90:.1f}° on 90% of stops (max {tilts[-1]:.1f}°); {climb:.0f} m of total climb.')
+        note = NOTES.get(mission, {}).get(seg['name'])
+        if note:
+            level = max(level, note[0], key=LEVELS.index)
+            reasons.append(note[1])
+        seg['difficulty'] = level
+        seg['reasons'] = reasons
+
+
 def main():
     raw_dir = Path(sys.argv[1] if len(sys.argv) > 1 else '.cache/raw-routes')
     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -236,10 +290,14 @@ def main():
         thinned = simplify(smooth(cleaned, STEP_M, SIGMA_M), TOLERANCE_M)
         data = {'mission': mission, 'source': url, 'lengthKm': round(length_km(cleaned), 2),
                 'segments': split_phases(thinned, PHASES[mission], cleaned), 'points': thinned}
+        waypoints = WAYPOINTS.get(mission) and [
+            f['properties'] for f in json.loads(fetch(WAYPOINTS[mission], raw_dir).read_text())['features']]
+        score_segments(mission, data['segments'], waypoints)
         (OUT / f'{mission}.json').write_text(json.dumps(data, separators=(',', ':')))
         print(f'{mission}: {len(cleaned)} -> {len(thinned)} points, {data["lengthKm"]} km')
         for segment in data['segments']:
-            print(f"  {segment['name']}: sol {segment['sols'][0]}-{segment['sols'][1]}, {segment['lengthKm']} km")
+            print(f"  {segment['name']}: sol {segment['sols'][0]}-{segment['sols'][1]}, "
+                  f"{segment['lengthKm']} km, {segment['difficulty']} ({segment['basis']})")
 
 
 if __name__ == '__main__':
