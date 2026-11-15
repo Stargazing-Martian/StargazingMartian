@@ -1,3 +1,4 @@
+import { surfacePoint } from '../mars/surface-point.js?v=1';
 const Cesium = globalThis.Cesium;
 
 // Stage 2 is split in two: right after the showcase the globe is centred
@@ -45,6 +46,7 @@ export function createMissionPins(viewer, ellipsoid, missions, { onSelect } = {}
         return {
             element,
             position: Cesium.Cartesian3.fromDegrees(mission.lon, mission.lat, 0, ellipsoid),
+            cartographic: Cesium.Cartographic.fromDegrees(mission.lon, mission.lat),
         };
     });
 
@@ -64,6 +66,7 @@ export function createMissionPins(viewer, ellipsoid, missions, { onSelect } = {}
 
         const occluder = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC);
         for (const item of items) {
+            surfacePoint(viewer, ellipsoid, item.cartographic, item.position);
             const onScreen = occluder.isPointVisible(item.position)
                 && toWindow(viewer.scene, item.position, screen);
             item.element.hidden = !onScreen;

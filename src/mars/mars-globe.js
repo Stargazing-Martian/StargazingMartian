@@ -7,10 +7,10 @@ import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=7';
 import { createMarsSkybox } from './mars-skybox.js';
 import { MISSIONS } from '../missions/mission-data.js?v=12';
-import { createMissionPins } from '../missions/mission-pins.js?v=11';
+import { createMissionPins } from '../missions/mission-pins.js?v=12';
 import { createMissionSelection } from '../missions/mission-selection.js?v=27';
-import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=27';
-import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
+import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=29';
+import { createRouteEndpoints } from '../routes/route-endpoints.js?v=2';
 import { createMissionPanel } from '../ui/mission-panel.js?v=6';
 import { createPhotoViewer } from '../ui/photo-viewer.js?v=5';
 import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=4';
@@ -134,6 +134,15 @@ createAbout();
     const status       = document.getElementById('terrain-status');
 
     selection.onChange(({ mission }) => environment.selectMission(mission));
+    // The globe opens at true height (1x). Selecting a site or route switches
+    // to 5x relief so the local terrain reads; leaving the selection goes back.
+    const reliefScale = document.getElementById('relief-scale');
+    selection.onChange(({ mission }) => {
+        const scale = mission ? '5' : '1';
+        if (reliefScale.value === scale) return;
+        reliefScale.value = scale;
+        reliefScale.dispatchEvent(new Event('change', { bubbles: true }));
+    });
 
     let generation = 0;
     let removeProviderError;

@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=41">
+    <link rel="stylesheet" href="style.css?v=42">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -261,7 +261,7 @@
         <div id="elevation-legend" hidden>
             <div class="elevation-ramp"></div>
             <div class="elevation-labels"><span>−8 km</span><span>Source DEM height</span><span>+22 km</span></div>
-            <p id="relief-scale-note" class="science-notes">Relief shown at 5× height; colours use source DEM metres.</p>
+            <p id="relief-scale-note" class="science-notes">Relief shown at 1× height; colours use source DEM metres.</p>
         </div>
         <details id="map-more" class="map-more">
             <summary>More options</summary>
@@ -276,8 +276,8 @@
                 <label><input type="checkbox" id="topography"> Topographic mode</label>
                 <label for="relief-scale">Height scale</label>
                 <select id="relief-scale">
-                    <option value="1">1× — true height</option>
-                    <option value="5" selected>5× — relief view</option>
+                    <option value="1" selected>1× — true height</option>
+                    <option value="5">5× — relief view</option>
                 </select>
             </fieldset>
             <details id="mission-environment">
@@ -329,7 +329,7 @@
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
     <script src="site-config.js?v=1"></script>
-    <script type="module" src="app.js?v=50"></script>
+    <script type="module" src="app.js?v=52"></script>
 </body>
 
 </html>

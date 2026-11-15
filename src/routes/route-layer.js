@@ -45,9 +45,27 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
     }
     function setStyle(entity, style) {
         entity.polyline.width = style.casingWidth;
-        entity.polyline.material = new Cesium.PolylineOutlineMaterialProperty({
+        const material = new Cesium.PolylineOutlineMaterialProperty({
             color: style.fill, outlineColor: style.casing,
             outlineWidth: (style.casingWidth - style.fillWidth) / 2,
+        });
+        entity.polyline.material = material;
+        // Parts of a line that dip behind exaggerated relief stay visible, so
+        // the line never looks cut short of its START/END markers.
+        entity.polyline.depthFailMaterial = material;
+    }
+
+    // Display-only smoothing of the prepared path. Raw rover vertices zig-zag
+    // every few metres; drawn as a wide 3D line, each sharp reversal becomes a
+    // mitre spike. A short moving average (endpoints fixed) removes the spikes;
+    // source coordinates, stats and segment anchors are unchanged.
+    function smoothForDisplay(points, radius = 12) {
+        return points.map((point, i) => {
+            const r = Math.min(radius, i, points.length - 1 - i);
+            let lon = 0, lat = 0;
+            for (let j = i - r; j <= i + r; j++) { lon += points[j][0]; lat += points[j][1]; }
+            const n = 2 * r + 1;
+            return [lon / n, lat / n, point[2]];
         });
     }
     for (const [id, data] of routeData) {
@@ -60,7 +78,7 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
         }));
         const hover = addLine([]);
         setStyle(hover, STYLE.hover);
-        const path = createSurfacePath(viewer, ellipsoid, data.render.points, drawing => {
+        const path = createSurfacePath(viewer, ellipsoid, smoothForDisplay(data.render.points), drawing => {
             data.render.anchors.forEach((index, i) => Cesium.Cartesian3.fromDegrees(
                 data.points[i][0], data.points[i][1], drawing[index].height, ellipsoid, positions[i]));
             for (const segment of segments) segment.line.polyline.positions =
