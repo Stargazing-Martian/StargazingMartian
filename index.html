@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=25">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -23,9 +23,33 @@
 
         <div id="mars-globe"></div>
 
+        <a id="site-logo" href="./" aria-label="Stargazing Martian — home">
+            <svg class="logo-mark" viewBox="0 0 400 400" aria-hidden="true">
+                <defs>
+                    <linearGradient id="logo-gradient-mark" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#fff4e6"/>
+                        <stop offset=".55" stop-color="#ffd3ad"/>
+                        <stop offset="1" stop-color="#ff9a62"/>
+                    </linearGradient>
+                </defs>
+                <g transform="matrix(1,0,0,1,-14186.592124,-2649.613729)"><g transform="matrix(1,0,0,1,-25,0)"><g transform="matrix(0.829065,0,0,0.827818,6197.022657,1987.359603)">
+                    <path fill="url(#logo-gradient-mark)" d="M9673.461,1097.435C9670.619,1082.625 9667,1057.234 9667,1041.599C9667,908.257 9775.257,800 9908.599,800C10035.594,800 10139.835,898.196 10149.471,1022.738C10135.533,966.435 10058.338,936.369 9947.906,939.591C10085.142,811.709 9753.845,834.218 9753.845,1005.091C9862.133,935.481 10148.68,926.705 10148.68,1068.812C10135.141,1189.364 10032.742,1283.198 9908.599,1283.198C9804.269,1283.198 9715.296,1216.925 9681.518,1124.216C9689.515,1089.919 9765.639,1048.042 9805.835,1040.525C9691.469,1225.096 9985.16,1274.465 10039.205,1102.804C10089.576,942.812 9769.927,978.246 9673.461,1097.435Z"/>
+                </g></g></g>
+            </svg>
+            <svg class="logo-word" viewBox="0 0 287 23" aria-hidden="true">
+                <defs>
+                    <linearGradient id="logo-gradient-word" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0" stop-color="#fff4e6"/>
+                        <stop offset=".6" stop-color="#ffd3ad"/>
+                        <stop offset="1" stop-color="#ffa874"/>
+                    </linearGradient>
+                </defs>
+                <path fill="url(#logo-gradient-word)" d="M4.30346e-05 22.4V-7.62939e-06H14.816L19.84 9.69599L24.864 -7.62939e-06H39.68V22.4H30.08V8.63999L30.048 8.73599L22.944 22.4H16.736L9.63204 8.73599L9.60004 8.63999V22.4H4.30346e-05ZM41.3583 22.4L55.3423 -7.62939e-06H67.0863L81.0383 22.4H70.3823L68.4623 18.912H54.0303L52.0143 22.4H41.3583ZM58.2863 11.488L57.1983 13.408H65.4223L64.3663 11.488L61.7103 6.04799H61.0703L58.2863 11.488ZM82.6875 22.4V-7.62939e-06H114.592C116.874 -7.62939e-06 118.624 0.511992 119.84 1.53599C121.056 2.53866 121.664 3.92533 121.664 5.69599C121.664 7.06133 121.248 8.17066 120.416 9.02399C119.584 9.87733 118.282 10.464 116.512 10.784V11.424C118.453 11.5947 119.914 12.1493 120.896 13.088C121.877 14.0053 122.368 15.2 122.368 16.672V22.4H112V16.992C112 16.608 111.882 16.2987 111.648 16.064C111.413 15.8293 111.093 15.712 110.688 15.712H92.6075V22.4H82.6875ZM92.6075 9.63199H110.048C110.453 9.63199 110.773 9.50399 111.008 9.24799C111.242 8.99199 111.36 8.65066 111.36 8.22399C111.36 7.75466 111.232 7.40266 110.976 7.16799C110.72 6.93333 110.41 6.81599 110.048 6.81599H92.6075V9.63199ZM138.254 22.4V7.42399H123.374V-7.62939e-06H163.054V7.42399H148.174V22.4H138.254ZM164.895 22.4V14.976H179.775V7.42399H164.895V-7.62939e-06H204.575V7.42399H189.695V14.976H204.575V22.4H164.895ZM205.577 22.4L219.561 -7.62939e-06H231.305L245.257 22.4H234.601L232.681 18.912H218.249L216.233 22.4H205.577ZM222.505 11.488L221.417 13.408H229.641L228.585 11.488L225.929 6.04799H225.289L222.505 11.488ZM246.906 22.4V-7.62939e-06H256.698L276.666 12.352V-7.62939e-06H286.586V22.4H276.794L256.826 10.048V22.4H246.906Z"/>
+            </svg>
+        </a>
         <header id="top-header">
 
-            <h1 id="site-title">STARGAZING</h1>
+            <h1 id="site-title" class="visually-hidden">Stargazing</h1>
 
             <nav id="top-nav">
 
@@ -196,7 +220,7 @@
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
     <script src="site-config.js?v=1"></script>
-    <script type="module" src="app.js?v=41"></script>
+    <script type="module" src="app.js?v=44"></script>
 </body>
 
 </html>

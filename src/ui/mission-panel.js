@@ -158,6 +158,15 @@ export function createMissionPanel(selection, routes, photos = {}, photoViewer) 
                 not a verified walking route.</p>`;
     }
 
+    // Each view change eases in, so switching views reads as one panel.
+    function fadeIn() {
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        for (const child of panel.children) {
+            child.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }],
+                { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' });
+        }
+    }
+
     function render() {
         const { mission, segment, corridor } = state;
         if (corridor) {
@@ -168,6 +177,7 @@ export function createMissionPanel(selection, routes, photos = {}, photoViewer) 
                 panel.innerHTML = corridorView(corridor);
                 panel.scrollTop = 0;
                 panel.hidden = false;
+                fadeIn();
             }
             return;
         }
@@ -190,6 +200,7 @@ export function createMissionPanel(selection, routes, photos = {}, photoViewer) 
                 : segmentView(mission, segments, segment);
             panel.scrollTop = 0;
             panel.hidden = false;
+            fadeIn();
         }
         // Hover only toggles classes, so the list keeps its scroll position.
         for (const element of panel.querySelectorAll('[data-segment]')) {
