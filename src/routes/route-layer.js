@@ -12,7 +12,18 @@ const STYLE = {
     selected: { casing: color('#17117a'), casingWidth: 12, fill: color('#3d33f0'), fillWidth: 8 },
 };
 
-export function createRouteLayer(viewer, ellipsoid, missions, getRoute) {
+// Real rover traverses, built by scripts/build_routes.py.
+// Returns Map<missionId, [[lon, lat, sol], ...]>.
+export async function loadRoutes(missions) {
+    const entries = await Promise.all(missions.filter(m => m.hasRoute).map(async mission => {
+        const response = await fetch(`data/routes/${mission.id}.json`);
+        if (!response.ok) throw new Error(`Route ${mission.id}: HTTP ${response.status}`);
+        return [mission.id, (await response.json()).points];
+    }));
+    return new Map(entries);
+}
+
+export function createRouteLayer(viewer, ellipsoid, routeData) {
     const routes = new Map();
 
     function addLine(positions, zIndex) {
@@ -22,11 +33,10 @@ export function createRouteLayer(viewer, ellipsoid, missions, getRoute) {
         });
     }
 
-    for (const mission of missions) {
-        if (!mission.hasRoute) continue;
-        const points = getRoute(mission);
-        const positions = Cesium.Cartesian3.fromDegreesArray(points.flat(), ellipsoid);
-        routes.set(mission.id, {
+    for (const [id, points] of routeData) {
+        const positions = Cesium.Cartesian3.fromDegreesArray(
+            points.flatMap(([lon, lat]) => [lon, lat]), ellipsoid);
+        routes.set(id, {
             positions,
             casing: addLine(positions, 0),
             fill: addLine(positions, 1),
@@ -72,8 +82,8 @@ export function createRouteLayer(viewer, ellipsoid, missions, getRoute) {
     return {
         positionsOf(id) { return routes.get(id)?.positions; },
         // Screen-space hit test: Cesium's pick() does not reliably return
-        // ground-clamped lines (the atmosphere primitive wins), so measure the
-        // click's pixel distance to each visible route instead.
+        // ground-clamped lines, so measure the click's pixel distance to each
+        // visible route instead.
         hitTest(windowPosition, tolerancePx) {
             const occluder = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC);
             let best, bestDistance = tolerancePx;
