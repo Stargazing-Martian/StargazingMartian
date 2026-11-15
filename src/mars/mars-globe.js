@@ -66,7 +66,10 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     viewer.scene.globe.baseColor            = new Cesium.Color(0.12, 0.06, 0.03, 1.0);
     viewer.scene.globe.showGroundAtmosphere = false;
     viewer.scene.globe.enableLighting       = true;
-    viewer.scene.globe.maximumScreenSpaceError = 2;
+    // Native Retina canvas stays; the tile error budget follows the pixel
+    // ratio so the globe needs the same tiles as at 1x (about 4x fewer on a
+    // Retina Mac). Waiting for 4x the tiles made the first load very slow.
+    viewer.scene.globe.maximumScreenSpaceError = 2 * Math.min(window.devicePixelRatio || 1, 2);
     viewer.scene.postProcessStages.fxaa.enabled = true;
     viewer.scene.globe.tileCacheSize = 512;
     // Load a usable parent before fanning out into many missing children.
@@ -212,17 +215,23 @@ import { createMapModePicker } from '../ui/map-mode-picker.js?v=2';
     });
 
     // Do not expose an empty dark globe while its first surface tiles arrive.
+    // Show it once the imagery tiles are in, or after 3 s at the latest;
+    // never wait for the 3D terrain download (tens of MB on a slow link).
+    const reveal = () => { container.dataset.surfaceReady = 'true'; revealSurface(); };
     const revealSurface = viewer.scene.postRender.addEventListener(() => {
-        if (viewer.scene.globe.tilesLoaded && status.dataset.state !== 'loading') {
-            container.dataset.surfaceReady = 'true';
-            revealSurface();
-        }
+        if (viewer.scene.globe.tilesLoaded) reveal();
     });
+    setTimeout(reveal, 3000);
     document.addEventListener('visibilitychange', () => {
         viewer.useDefaultRenderLoop = !document.hidden;
         if (!document.hidden) { viewer.resize(); viewer.scene.requestRender(); }
     });
 
     // Enabled on every host, including GitHub Pages. The source lives in site-config.js.
-    void loadTerrain();
+    // Deferred: the showcase is a far view where relief is invisible, so the
+    // heavy terrain tiles start when exploring begins (or after 5 s idle).
+    let terrainStarted = false;
+    const startTerrain = () => { if (!terrainStarted) { terrainStarted = true; void loadTerrain(); } };
+    onEnterInteractive(startTerrain);
+    setTimeout(startTerrain, 5000);
 })();
