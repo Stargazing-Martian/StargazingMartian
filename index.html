@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=34">
+    <link rel="stylesheet" href="style.css?v=35">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -88,6 +88,10 @@
                 <img src="assets/previews/topography.png" alt="" width="360" height="180">
                 <span>Topography</span>
             </button>
+            <button type="button" class="map-mode" role="radio" data-mode="radiation" aria-checked="false">
+                <img src="assets/previews/radiation.png" alt="" width="360" height="180">
+                <span>Radiation</span>
+            </button>
             <button type="button" class="map-mode" role="radio" data-mode="temperature" aria-checked="false">
                 <img src="assets/previews/temperature.png" alt="" width="360" height="180">
                 <span>Temperature</span>
@@ -100,7 +104,23 @@
                 <option value="surface">Surface and terrain</option>
                 <option value="dust">Atmospheric dust · NASA TES</option>
                 <option value="temperature">Surface temperature · NASA TES</option>
+                <option value="radiation">Radiation shielding · derived GCR model</option>
             </select>
+            <div id="radiation-map-panel" class="scientific-map-panel" hidden>
+                <p class="science-badge">Derived planning model · NASA topography + published transport table</p>
+                <p id="radiation-status" role="status"></p>
+                <div class="scientific-map-ramp" style="background:linear-gradient(to right,rgb(40,190,185),rgb(250,65,50))"></div>
+                <div class="elevation-labels"><span>0.85×</span><span>Relative proxy</span><span>1.30×</span></div>
+                <p id="radiation-reading" class="scientific-map-reading" role="status"></p>
+                <label><input id="radiation-routing" type="checkbox" checked> Include radiation proxy in expedition corridors</label>
+                <p class="science-notes">Only planning corridors change; historical rover traverses remain historical. The corridor card compares route length and integrated proxy with the baseline.</p>
+                <details class="science-notes"><summary>Model sources and limits</summary>
+                    <p>Stargazing model, not a NASA-issued dose map. NASA MOLA/HRSC terrain heights feed a fixed exponential atmosphere (11 km scale height, 16 g/cm² reference). Linear interpolation of Townsend et al. Table 1 (417 MV, zero aluminum) supplies a vertical-column ratio. This omits angular transport, solar storms, seasonal weather, regolith, terrain shielding and equipment. No mSv, dose forecast or human safety limit is assigned.</p>
+                    <p>Corridors use ~7.4 km MOLA cells and an explicit engineering weight of 4 × proxy in their cost. Unknown temperature cells are flagged and penalised, never replaced by invented observations. These are coarse expedition scenarios, not verified safe walking routes.</p>
+                    <a href="https://doi.org/10.1029/2009SW000564" target="_blank" rel="noopener noreferrer">NASA/JSC coauthored HZETRN study</a><br>
+                    <a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html" target="_blank" rel="noopener noreferrer">NASA atmosphere assumptions</a>
+                </details>
+            </div>
             <div id="dust-map-panel" class="scientific-map-panel" hidden>
                 <p class="science-badge">Historical observation · regional atmosphere · 6° × 3°</p>
                 <label for="dust-map-product">Observation period from the archive</label>
@@ -174,6 +194,8 @@
             <p id="terrain-status" role="status" aria-live="polite">Loading Mars terrain…</p>
             <p id="terrain-error" role="status" hidden></p>
             <p id="terrain-coverage" class="science-notes" hidden></p>
+            <p id="terrain-source" class="science-notes"></p>
+            <p id="imagery-status" class="science-notes">NASA Viking global colour · NASA MRO/CTX detail in rover regions. CTX is grayscale; image and DEM resolutions differ.</p>
             <p id="science-map-context" class="science-notes">Free archive browsing · no mission/date association.</p>
             <fieldset id="relief-controls" disabled>
                 <legend>Surface view</legend>
@@ -233,7 +255,7 @@
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
     <script src="site-config.js?v=1"></script>
-    <script type="module" src="app.js?v=47"></script>
+    <script type="module" src="app.js?v=48"></script>
 </body>
 
 </html>

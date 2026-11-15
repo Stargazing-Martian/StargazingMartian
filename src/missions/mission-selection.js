@@ -25,6 +25,7 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
     const notify = () => listeners.forEach(listener =>
         listener({ mission: selected, segment: selectedSegment, hovered: hoveredSegment,
             corridor: selectedCorridor && corridors.get(selectedCorridor) }));
+    corridors?.onPolicyChange(notify);
     let flying = false; // true while the camera flies to a selection
     let flightCount = 0;
 

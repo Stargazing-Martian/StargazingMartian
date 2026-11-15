@@ -83,11 +83,6 @@ def load_temperature():
     stack = np.array(stack, dtype=np.float64).reshape(len(files), 60, 60)
     mean = np.nanmean(stack, axis=0)
     low = np.nanmin(stack, axis=0)
-    for grid in (mean, low):  # fill gaps with the latitude band's mean
-        for r in range(60):
-            row = grid[r]
-            row[np.isnan(row)] = np.nanmean(row) if np.isfinite(row).any() else np.nan
-        grid[np.isnan(grid)] = np.nanmin(grid)
     return mean, low
 
 
@@ -117,7 +112,7 @@ def build_cost():
     cost = (1
             + (slope / 4.0) ** 2          # 4° -> +1, 8° -> +4
             + rough / 400.0               # 400 m of local relief -> +1
-            + np.maximum(0, 230 - temp) / 15.0)  # colder than -43 °C costs more
+            + np.where(np.isfinite(temp), np.maximum(0, 230 - temp) / 15.0, 1.0))
     cost[slope > 20] = 1e4                # walls of canyons, volcano scarps
     cost[np.abs(lats) > 80] = 1e5         # polar caps
     # Cells shrink towards the poles; MCP walks in cell steps, so scale by
@@ -221,8 +216,10 @@ def describe(m, cells):
     climb = float(np.sum(np.maximum(0, np.diff(z))))
     descent = float(np.sum(np.maximum(0, -np.diff(z))))
     p90 = float(np.percentile(slope, 90))
-    tmin = float(np.min(m['temp_low'][rows, cols])) - 273.15
-    tmean = float(np.mean(m['temp'][rows, cols])) - 273.15
+    temperatures = m['temp'][rows, cols]
+    cold = m['temp_low'][rows, cols]
+    tmin = float(np.nanmin(cold)) - 273.15 if np.isfinite(cold).any() else math.nan
+    tmean = float(np.nanmean(temperatures)) - 273.15 if np.isfinite(temperatures).any() else math.nan
     maxlat = float(np.max(np.abs(lats)))
 
     # Slopes averaged over 7 km cells are far gentler than the ground an
@@ -244,17 +241,22 @@ def describe(m, cells):
         if medium or hard:
             reasons.append(why)
     if not reasons:
-        reasons.append('Gentle, mostly flat plains with mild daytime temperatures.')
+        reasons.append('Gentle terrain at this coarse planning scale; local safety is unverified.')
     reasons.append(f'Slope at 7 km scale: {p90:.1f}° on 90% of the corridor (max {float(slope.max()):.1f}°).')
     reasons.append(f'{climb / 1000:.1f} km of total climb and {descent / 1000:.1f} km of descent.')
-    reasons.append(f'Daytime surface temperature along the way: mean {tmean:.0f} °C, coldest {tmin:.0f} °C.')
+    missing = 100 * float(np.mean(~np.isfinite(temperatures)))
+    if math.isfinite(tmean):
+        reasons.append(f'Historical TES samples only: mean {tmean:.0f} °C, minimum {tmin:.0f} °C; not daily weather.')
+    reasons.append(f'No TES sample in {missing:.1f}% of corridor cells; unknown-cell planning penalty +1, no fabricated temperatures.')
     if maxlat > 55:
         reasons.append(f'Reaches {maxlat:.0f}° latitude: long, cold polar winters.')
-    points = [[round(lon, 3), round(lat, 3)] for lon, lat in simplify(smooth(unwrapped), 0.012)]
+    points = [[lon, lat] for lon, lat in unwrapped]
     return {
         'points': points, 'lengthKm': round(length), 'climbM': round(climb), 'descentM': round(descent),
         'slopeP90': round(p90, 1), 'slopeMax': round(float(slope.max()), 1),
-        'tempMeanC': round(tmean), 'tempMinC': round(tmin),
+        'tempMeanC': round(tmean) if math.isfinite(tmean) else None,
+        'tempMinC': round(tmin) if math.isfinite(tmin) else None,
+        'temperatureMissingPercent': round(missing, 1),
         'sols': math.ceil(length / KM_PER_SOL), 'difficulty': level, 'reasons': reasons,
     }
 

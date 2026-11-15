@@ -143,8 +143,9 @@ export function createMissionPanel(selection, routes, photos = {}, photoViewer) 
                 <li><span class="label">Climb</span>${(c.climbM / 1000).toFixed(1)} km</li>
                 <li><span class="label">Slope (90%)</span>${c.slopeP90}°</li>
                 <li><span class="label">Max slope</span>${c.slopeMax}°</li>
-                <li><span class="label">Coldest day</span>${c.tempMinC} °C</li>
+                <li><span class="label">TES sample minimum</span>${c.tempMinC === null ? 'Unavailable' : `${c.tempMinC} °C`}</li>
             </ul>
+            <p class="note">${c.policy === 'radiation' ? 'Radiation-aware model' : 'Baseline scenario'} · Integrated relative proxy: ${c.radiationProxyKm ?? 'unavailable'} proxy·km; baseline ${c.baselineProxyKm ?? 'unavailable'} proxy·km over ${c.baselineLengthKm ?? c.lengthKm} km. Lower integrated proxy is preferable in this fixed scenario; it is not a dose or a safety certification.</p>
             <h3>Why ${DIFFICULTY_LABEL[c.difficulty].toLowerCase()}</h3>
             <ul class="reasons">${c.reasons.map(r => `<li>${escape(r)}</li>`).join('')}</ul>
             <h3>Destinations</h3>
@@ -170,7 +171,7 @@ export function createMissionPanel(selection, routes, photos = {}, photoViewer) 
     function render() {
         const { mission, segment, corridor } = state;
         if (corridor) {
-            const key = `corridor|${corridor.id}`;
+            const key = `corridor|${corridor.id}|${corridor.policy}`;
             if (key !== renderedKey) {
                 renderedKey = key;
                 panel.dataset.view = 'corridor';

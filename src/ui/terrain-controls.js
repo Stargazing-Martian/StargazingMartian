@@ -1,3 +1,4 @@
+import { requestSurfaceRender } from '../mars/request-surface-render.js';
 // Terrain remains active; display controls change colour and visual height only.
 export function createTerrainControls(viewer, imagery) {
     const Cesium = globalThis.Cesium;
@@ -37,7 +38,7 @@ export function createTerrainControls(viewer, imagery) {
         viewer.scene.verticalExaggeration = exaggeration;
         document.getElementById('relief-scale-note').textContent =
             `Relief shown at ${exaggeration}× height; colours use source DEM metres.`;
-        viewer.scene.requestRender();
+        requestSurfaceRender(viewer.scene);
     }
     topography.addEventListener('change', updateMaterial);
     scale.addEventListener('change', updateMaterial);

@@ -5,6 +5,8 @@ Usage: .cache/venv/bin/python scripts/build_map_previews.py
 
   terrain.png      MOLA MEGDR topography, hillshaded, in Mars tones
   topography.png   MOLA heights in the globe's elevation colour ramp
+  radiation.png    the GCR shielding proxy (data/science/radiation/model.json)
+                   from MOLA heights, in the radiation map's colours
   dust.png         TES dust optical depth (same colour scale as the map)
   temperature.png  TES daytime surface temperature (same colour scale)
 """
@@ -83,6 +85,18 @@ def topography():
     return np.clip(ramp((z + 8000) / 30000, TOPO_STOPS) * (0.55 + 0.45 * hillshade(z)[..., None]), 0, 255)
 
 
+def radiation():
+    # Same formula and colours as src/science/radiation-data.js.
+    model = json.loads((ROOT / 'data' / 'science' / 'radiation' / 'model.json').read_text())
+    z = mola()
+    column = model['referenceColumnGcm2'] * np.exp(-z / model['scaleHeightM'])
+    xs, ys = model['pathColumnGcm2'], model['tableEffectiveDoseCsvDay']
+    ratio = np.interp(column, xs, ys) / np.interp(model['referenceColumnGcm2'], xs, ys)
+    t = np.clip((ratio - .85) / .45, 0, 1)[..., None]
+    colour = np.concatenate([40 + 210 * t, 190 - 125 * t, 185 - 135 * t], axis=2)
+    return np.clip(colour * (0.6 + 0.4 * hillshade(z)[..., None]), 0, 255)
+
+
 def terrain():
     z = mola()
     gy, gx = np.gradient(z)
@@ -108,6 +122,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     write_png(OUT / 'terrain.png', terrain())
     write_png(OUT / 'topography.png', topography())
+    write_png(OUT / 'radiation.png', radiation())
     write_png(OUT / 'dust.png', science(f'tes-dust/{DUST_FILE}', 'CDOD610', DUST_STOPS, lambda v: v / 3))
     write_png(OUT / 'temperature.png', science(f'tes-temperature/{TEMPERATURE_FILE}', 'MEAN_K',
                                                TEMPERATURE_STOPS, lambda k: (k - 273.15 + 130) / 170))
