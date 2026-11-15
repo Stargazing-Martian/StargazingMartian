@@ -127,8 +127,50 @@ export function createMissionPanel(selection, routes, photos = {}, photoViewer) 
             <p class="note">${BASIS_NOTE[s.basis]}</p>`;
     }
 
+    // A Mars-wide expedition corridor between two destinations.
+    function corridorView(c) {
+        const days = `~${c.sols} sols`;
+        return `
+            <header>
+                <p class="eyebrow">Expedition corridor</p>
+                <button class="close" data-action="close" aria-label="Close">×</button>
+            </header>
+            <h2>${escape(c.fromNode.name)} → ${escape(c.toNode.name)}</h2>
+            <p class="place"><span class="chip chip--${c.difficulty}">${DIFFICULTY_LABEL[c.difficulty]} corridor</span></p>
+            <ul class="stats">
+                <li><span class="label">Distance</span>${c.lengthKm.toLocaleString('en-US')} km</li>
+                <li><span class="label">By rover</span>${days}</li>
+                <li><span class="label">Climb</span>${(c.climbM / 1000).toFixed(1)} km</li>
+                <li><span class="label">Slope (90%)</span>${c.slopeP90}°</li>
+                <li><span class="label">Max slope</span>${c.slopeMax}°</li>
+                <li><span class="label">Coldest day</span>${c.tempMinC} °C</li>
+            </ul>
+            <h3>Why ${DIFFICULTY_LABEL[c.difficulty].toLowerCase()}</h3>
+            <ul class="reasons">${c.reasons.map(r => `<li>${escape(r)}</li>`).join('')}</ul>
+            <h3>Destinations</h3>
+            <ul class="reasons">
+                <li><b>${escape(c.fromNode.name)}:</b> ${escape(c.fromNode.summary)}</li>
+                <li><b>${escape(c.toNode.name)}:</b> ${escape(c.toNode.summary)}</li>
+            </ul>
+            <p class="note">Least-cost path over NASA MOLA topography (~7.4 km cells) and TES daytime
+                surface temperature, for a multi-sol crewed rover expedition at about 20 km per sol.
+                At this scale boulders, small craters and cliffs are invisible: a planning corridor,
+                not a verified walking route.</p>`;
+    }
+
     function render() {
-        const { mission, segment } = state;
+        const { mission, segment, corridor } = state;
+        if (corridor) {
+            const key = `corridor|${corridor.id}`;
+            if (key !== renderedKey) {
+                renderedKey = key;
+                panel.dataset.view = 'corridor';
+                panel.innerHTML = corridorView(corridor);
+                panel.scrollTop = 0;
+                panel.hidden = false;
+            }
+            return;
+        }
         if (!mission) {
             panel.hidden = true;
             renderedKey = undefined;
@@ -167,6 +209,10 @@ export function createMissionPanel(selection, routes, photos = {}, photoViewer) 
         const action = event.target.closest('[data-action]')?.dataset.action;
         const row = event.target.closest('.segment-row');
         const photo = event.target.closest('[data-photo]');
+        if (state.corridor) {
+            if (action === 'close') selection.selectCorridor(undefined);
+            return;
+        }
         if (!state.mission) return; // panel is closing
         if (photo) photoViewer?.open(photos[state.mission.id][Number(photo.dataset.photo)]);
         else if (action === 'close') selection.select(undefined);

@@ -13,14 +13,18 @@ const DESELECT_ABOVE_HEIGHT = 400_000; // metres; zooming out past this leaves s
 // With a route selected, its segments highlight on hover; a click selects a
 // segment (the rest turn grey but stay clickable). Esc or an empty click then
 // steps back: first to the whole route, then out of the selection.
-export function createMissionSelection(viewer, ellipsoid, { pins, routes, missions }) {
+// Expedition corridors (whole-planet network) are selected the same way;
+// a corridor and a mission are never selected at the same time.
+export function createMissionSelection(viewer, ellipsoid, { pins, routes, missions, corridors }) {
     let selected;
+    let selectedCorridor;
     let selectedSegment;
     let hoveredSegment;
     // The left panel listens to every change of mission, segment or hover.
     const listeners = new Set();
     const notify = () => listeners.forEach(listener =>
-        listener({ mission: selected, segment: selectedSegment, hovered: hoveredSegment }));
+        listener({ mission: selected, segment: selectedSegment, hovered: hoveredSegment,
+            corridor: selectedCorridor && corridors.get(selectedCorridor) }));
     let flying = false; // true while the camera flies to a selection
     let flightCount = 0;
 
@@ -32,17 +36,21 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
                 Cesium.Cartesian3.fromDegrees(mission.lon, mission.lat, 0, ellipsoid),
                 ROUTELESS_RADIUS);
         sphere.radius = Math.max(sphere.radius, MIN_FRAME_RADIUS);
+        flyToSphere(sphere, VIEW_PITCH, 4.5);
+    }
+
+    function flyToSphere(sphere, pitch, rangeFactor) {
         // Starting a new flight cancels the previous one; only the latest
         // flight may clear the flag.
         const flight = ++flightCount;
         flying = true;
         const done = () => { if (flight === flightCount) flying = false; };
         stopTiltReset();
-        const range = sphere.radius * 4.5;
+        const range = sphere.radius * rangeFactor;
         const cameraHeight = Cesium.Cartesian3.magnitude(viewer.camera.positionWC) - ellipsoid.maximumRadius;
         viewer.camera.flyToBoundingSphere(sphere, {
             duration: FLY_SECONDS,
-            offset: new Cesium.HeadingPitchRange(0, VIEW_PITCH, range),
+            offset: new Cesium.HeadingPitchRange(0, pitch, range),
             // No "hop": by default Cesium climbs above the start before
             // descending, which looks like a jump when coming from orbit.
             maximumHeight: Math.max(cameraHeight, range),
@@ -101,7 +109,9 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
 
     function select(mission) {
         const wasSelected = Boolean(selected);
+        if (mission && selectedCorridor) { selectedCorridor = undefined; corridors?.select(undefined); }
         selected = mission;
+        corridors?.setMissionFocus(Boolean(mission));
         selectedSegment = undefined;
         pins.setSelected(mission?.id);
         routes.select(mission?.id);
@@ -130,9 +140,23 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
         notify();
     }
 
+    // Corridors are seen from orbit, so the camera looks straight down at
+    // them (no tilt to undo afterwards).
+    function selectCorridor(id) {
+        if (selected) select(undefined);
+        selectedCorridor = id;
+        corridors.select(id);
+        if (id) {
+            const sphere = Cesium.BoundingSphere.fromPoints(corridors.get(id).positions);
+            flyToSphere(sphere, Cesium.Math.toRadians(-90), 2.6);
+        }
+        notify();
+    }
+
     // One step back: segment -> whole route -> nothing.
     function stepBack() {
-        if (selectedSegment !== undefined) selectSegment(undefined);
+        if (selectedCorridor) selectCorridor(undefined);
+        else if (selectedSegment !== undefined) selectSegment(undefined);
         else if (selected) select(undefined);
     }
 
@@ -149,8 +173,10 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
     handler.setInputAction(({ position }) => {
         const hit = routes.hitTest(position, PICK_TOLERANCE_PX);
+        const corridor = !hit && corridors?.hitTest(position, PICK_TOLERANCE_PX);
         if (hit && hit.id === selected?.id) selectSegment(hit.segment);
         else if (hit) select(missions.find(m => m.id === hit.id));
+        else if (corridor) selectCorridor(corridor);
         else stepBack();
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -163,9 +189,11 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
     function updateHover() {
         const hit = routes.hitTest(pointer, PICK_TOLERANCE_PX);
+        const corridor = !hit && corridors?.hitTest(pointer, PICK_TOLERANCE_PX);
         pointer = undefined;
         if (selected) hoverSegment(hit?.id === selected.id ? hit.segment : undefined);
-        viewer.canvas.style.cursor = hit ? 'pointer' : '';
+        corridors?.hover(corridor || undefined);
+        viewer.canvas.style.cursor = hit || corridor ? 'pointer' : '';
     }
 
     document.addEventListener('keydown', event => {
@@ -175,6 +203,7 @@ export function createMissionSelection(viewer, ellipsoid, { pins, routes, missio
     return {
         select,
         selectSegment,
+        selectCorridor,
         hoverSegment,
         stepBack,
         onChange(listener) { listeners.add(listener); },
