@@ -57,16 +57,16 @@ export function createTerrainControls(viewer, imagery, enterInteractiveMode, ell
         if (!hit) return;
         const point = ellipsoid.cartesianToCartographic(hit);
         const current = ++measurement;
-        reading.textContent = 'Kaynak DEM yüksekliği okunuyor…';
+        reading.textContent = 'Reading source DEM height…';
         try {
             const [sample] = await Cesium.sampleTerrainMostDetailed(provider, [point], true);
             if (current !== measurement) return;
-            if (!Number.isFinite(sample.height)) throw new Error('Yükseklik okunamadı');
+            if (!Number.isFinite(sample.height)) throw new Error('Height could not be read');
             reading.textContent = `${Cesium.Math.toDegrees(sample.latitude).toFixed(4)}°, ` +
                 `${Cesium.Math.toDegrees(sample.longitude).toFixed(4)}° · ` +
-                `${Math.round(sample.height).toLocaleString('tr-TR')} m (kaynak DEM)`;
+                `${Math.round(sample.height).toLocaleString('en-US')} m (source DEM)`;
         } catch (error) {
-            if (current === measurement) reading.textContent = `Ölçüm alınamadı: ${error.message}`;
+            if (current === measurement) reading.textContent = `Measurement failed: ${error.message}`;
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
     return {
@@ -88,7 +88,7 @@ export function createTerrainControls(viewer, imagery, enterInteractiveMode, ell
                 provider = undefined;
                 ++measurement;
             }
-            reading.textContent = ready ? 'Yükseklik okumak için yüzeyde bir noktaya tıklayın.' : '';
+            reading.textContent = ready ? 'Click a point on the surface to read its height.' : '';
             updateMaterial();
         }
     };

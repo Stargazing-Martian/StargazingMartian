@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 const dustCode = await readFile(new URL('../src/science/dust-data.js', import.meta.url), 'utf8');
 const dustUrl = `data:text/javascript;base64,${Buffer.from(dustCode).toString('base64')}`;
 const code = (await readFile(new URL('../src/science/temperature-data.js', import.meta.url), 'utf8'))
-    .replace('./dust-data.js?v=1', dustUrl);
+    .replace(/\.\/dust-data\.js\?v=\d+/, dustUrl); // any cache-busting version
 const { validateTemperatureProduct, kelvinToCelsius, sampleTemperature,
     temperaturePixels, temperatureColor, fetchTemperatureProduct } =
     await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
@@ -35,7 +35,7 @@ test('Celsius conversion does not change the underlying Kelvin data', () => {
 });
 
 test('a different temperature period cannot be relabeled as the selected date', () => {
-    assert.throws(() => validateTemperatureProduct(examples[0].product, examples[1].entry), /uyuşmuyor/);
+    assert.throws(() => validateTemperatureProduct(examples[0].product, examples[1].entry), /does not match/);
 });
 
 test('missing cells stay missing and sample spread is not measurement uncertainty', () => {
@@ -73,5 +73,5 @@ test('failed or swapped HTTP products cannot silently provide a different temper
     }), /503/);
     await assert.rejects(fetchTemperatureProduct(examples[0].entry, base, {
         fetcher: async () => new Response(examples[1].raw),
-    }), /bütünlüğü|uyuşmuyor/);
+    }), /integrity|does not match/);
 });

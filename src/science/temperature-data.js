@@ -1,4 +1,4 @@
-import { gridCell, MISSING_COLOR } from './dust-data.js?v=1';
+import { gridCell, MISSING_COLOR } from './dust-data.js?v=2';
 
 export const TEMPERATURE_FIELDS = ['MEAN_K', 'MIN_K', 'MAX_K', 'STD_K', 'COUNT',
     'LTST_MEAN', 'LTST_MIN', 'LTST_MAX', 'FIRST_UTC', 'LAST_UTC'];
@@ -14,21 +14,21 @@ export function validateTemperatureProduct(product, entry) {
         product.selectionStart !== entry.selectionStart || product.selectionEnd !== entry.selectionEnd ||
         product.observationStart !== entry.observationStart || product.observationEnd !== entry.observationEnd ||
         product.localTimeStart !== 13 || product.localTimeEndExclusive !== 15 ||
-        product.measurementUncertaintyK !== null) throw new Error('NASA sıcaklık ürünü veya gözlem dönemi uyuşmuyor.');
+        product.measurementUncertaintyK !== null) throw new Error('NASA temperature product or observation period does not match.');
     for (const name of TEMPERATURE_FIELDS) {
         const values = product.fields?.[name];
         if (!Array.isArray(values) || values.length !== 3600 || values.some(v => v !== null && !Number.isFinite(v))) {
-            throw new Error('NASA sıcaklık haritasının sayısal verisi geçersiz.');
+            throw new Error('NASA temperature map data is invalid.');
         }
     }
     const first = Date.parse(product.selectionStart) / 1000;
     const last = Date.parse(product.selectionEnd) / 1000;
-    if (!Number.isFinite(first) || !Number.isFinite(last) || first >= last) throw new Error('Sıcaklık tarih aralığı geçersiz.');
+    if (!Number.isFinite(first) || !Number.isFinite(last) || first >= last) throw new Error('Temperature date range is invalid.');
     let count = 0, retrievals = 0;
     for (let i = 0; i < 3600; i++) {
         const v = Object.fromEntries(TEMPERATURE_FIELDS.map(name => [name, product.fields[name][i]]));
         if (v.MEAN_K === null) {
-            if (Object.values(v).some(value => value !== null)) throw new Error('Sıcaklık eksik veri maskesi tutarsız.');
+            if (Object.values(v).some(value => value !== null)) throw new Error('Temperature missing-data mask is inconsistent.');
             continue;
         }
         if (TEMPERATURE_FIELDS.filter(name => name !== 'STD_K').some(name => v[name] === null) ||
@@ -38,13 +38,13 @@ export function validateTemperatureProduct(product, entry) {
             !Number.isInteger(v.FIRST_UTC) || !Number.isInteger(v.LAST_UTC) ||
             v.FIRST_UTC < first || v.LAST_UTC > last || v.FIRST_UTC > v.LAST_UTC ||
             (v.COUNT === 1 ? v.STD_K !== null : v.STD_K === null || v.STD_K < 0)) {
-            throw new Error('Sıcaklık örnek sayısı, zaman bilgisi veya yayılımı geçersiz.');
+            throw new Error('Temperature sample count, timing or spread is invalid.');
         }
         ++count; retrievals += v.COUNT;
     }
     if (count !== entry.validCount || count !== product.validCount ||
         retrievals !== product.selectedRetrievals || retrievals !== entry.selectedRetrievals) {
-        throw new Error('Sıcaklık gözlem sayıları uyuşmuyor.');
+        throw new Error('Temperature observation counts do not match.');
     }
     return product;
 }
@@ -75,12 +75,12 @@ export function temperaturePixels(product) {
 
 export async function fetchTemperatureProduct(entry, baseUrl, { signal, fetcher = fetch } = {}) {
     const response = await fetcher(new URL(entry.file, baseUrl), { signal });
-    if (!response.ok) throw new Error(`NASA sıcaklık dosyası: HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`NASA temperature file: HTTP ${response.status}`);
     const raw = await response.arrayBuffer();
     if (globalThis.crypto?.subtle) {
         const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', raw)),
             v => v.toString(16).padStart(2, '0')).join('');
-        if (hash !== entry.sha256) throw new Error('NASA sıcaklık dosyasının bütünlüğü doğrulanamadı.');
+        if (hash !== entry.sha256) throw new Error('NASA temperature file integrity could not be verified.');
     }
     return validateTemperatureProduct(JSON.parse(new TextDecoder().decode(raw)), entry);
 }

@@ -58,108 +58,108 @@
         </div>
 
     </div>
-    <aside id="terrain-panel" aria-label="Mars arazi ayarları">
-        <p id="terrain-status" role="status" aria-live="polite">3B arazi için CTOD bağlantısını ayarlayın.</p>
+    <aside id="terrain-panel" aria-label="Mars map settings">
+        <p id="terrain-status" role="status" aria-live="polite">Set up the CTOD connection for 3D terrain.</p>
         <details id="terrain-connection" open>
-            <summary>Arazi bağlantısı</summary>
+            <summary>Terrain connection</summary>
             <form id="terrain-form">
-                <label for="terrain-url">CTOD terrain adresi</label>
-                <input id="terrain-url" type="text" placeholder="https://sunucu/tiles/mars" required spellcheck="false">
-                <button type="submit" id="connect-terrain">Bağlan / yeniden dene</button>
+                <label for="terrain-url">CTOD terrain URL</label>
+                <input id="terrain-url" type="text" placeholder="https://server/tiles/mars" required spellcheck="false">
+                <button type="submit" id="connect-terrain">Connect / retry</button>
             </form>
-            <small>Bu sayfanın origin’i: <code id="terrain-origin"></code></small>
+            <small>This page's origin: <code id="terrain-origin"></code></small>
             <p id="terrain-error" role="alert" hidden></p>
         </details>
         <fieldset id="relief-controls" disabled>
-            <legend>Yüzey görünümü</legend>
-            <label><input type="checkbox" id="topography" checked> Topografya renkleri</label>
-            <label for="relief-scale">Düşey ölçek</label>
+            <legend>Surface view</legend>
+            <label><input type="checkbox" id="topography" checked> Topography colours</label>
+            <label for="relief-scale">Vertical scale</label>
             <select id="relief-scale">
-                <option value="1">1× — gerçek yükseklik</option>
-                <option value="5" selected>5× — kabartı görünümü</option>
-                <option value="10">10× — abartılı kabartı</option>
+                <option value="1">1× — true height</option>
+                <option value="5" selected>5× — relief view</option>
+                <option value="10">10× — exaggerated relief</option>
             </select>
-            <button id="olympus-view" type="button">Olympus Mons’a yaklaş</button>
+            <button id="olympus-view" type="button">Fly to Olympus Mons</button>
         </fieldset>
         <div id="elevation-legend" hidden>
             <div class="elevation-ramp"></div>
-            <div class="elevation-labels"><span>−8 km</span><span>Kaynak DEM yüksekliği</span><span>+22 km</span></div>
+            <div class="elevation-labels"><span>−8 km</span><span>Source DEM height</span><span>+22 km</span></div>
         </div>
         <p id="terrain-reading" role="status" aria-live="polite"></p>
         <fieldset id="science-map-controls">
-            <legend>Bilimsel harita</legend>
-            <label for="science-map-mode">Harita modu</label>
+            <legend>Science map</legend>
+            <label for="science-map-mode">Map mode</label>
             <select id="science-map-mode">
-                <option value="surface">Yüzey ve arazi</option>
-                <option value="dust">Atmosferik toz · NASA TES</option>
-                <option value="temperature">Yüzey sıcaklığı · NASA TES</option>
+                <option value="surface">Surface and terrain</option>
+                <option value="dust">Atmospheric dust · NASA TES</option>
+                <option value="temperature">Surface temperature · NASA TES</option>
             </select>
             <div id="dust-map-panel" class="scientific-map-panel" hidden>
-                <p class="science-badge">Tarihsel gözlem · bölgesel atmosfer · 6° × 3°</p>
-                <label for="dust-map-product">Arşivden seçilmiş gözlem dönemi</label>
+                <p class="science-badge">Historical observation · regional atmosphere · 6° × 3°</p>
+                <label for="dust-map-product">Observation period from the archive</label>
                 <select id="dust-map-product" disabled aria-describedby="dust-map-period"></select>
                 <p id="dust-map-status" role="status" aria-live="polite"></p>
-                <button id="dust-map-retry" type="button" hidden>Veriyi yeniden yükle</button>
+                <button id="dust-map-retry" type="button" hidden>Reload data</button>
                 <p id="dust-map-period"></p>
-                <div id="dust-map-legend" class="scientific-map-legend" aria-label="Toz optik derinliği renk ölçeği">
+                <div id="dust-map-legend" class="scientific-map-legend" aria-label="Dust optical depth colour scale">
                     <div id="dust-map-ramp" class="scientific-map-ramp"></div>
-                    <div class="elevation-labels"><span>0</span><span>1,5</span><span>≥3</span></div>
-                    <p>τ₆₁₀ · 9,3 μm soğurma optik derinliği<br>610 Pa referans basıncı · boyutsuz</p>
-                    <span class="dust-missing-key"></span> Gri: veri yok
+                    <div class="elevation-labels"><span>0</span><span>1.5</span><span>≥3</span></div>
+                    <p>τ₆₁₀ · 9.3 μm absorption optical depth<br>610 Pa reference pressure · dimensionless</p>
+                    <span class="dust-missing-key"></span> Grey: no data
                 </div>
-                <button id="dust-map-sample" type="button" disabled>Merkezdeki bölgenin değerini oku</button>
+                <button id="dust-map-sample" type="button" disabled>Read the value at the centre</button>
                 <p id="dust-map-reading" class="scientific-map-reading" role="status" aria-live="polite"></p>
                 <details class="science-notes">
-                    <summary>Kaynak ve bilimsel sınırlar</summary>
-                    <p>11 örnek dönem sunulur; arşivin tamamı veya kesintisiz günlük seri değildir.
-                        Grid aralığı 6° × 3°; yakınlaştırmak yeni ölçüm üretmez.
-                        Günlük haritalarda 1–7 sol içindeki gözlemler birleştirilebilir.</p>
-                    <p>Güncel hava tahmini veya roverın yerel sıcaklık/rüzgâr ölçümü değildir.
-                        Seçili rota ile tarih eşleşmesi kurulmaz. Astronotun rota güvenliği için
-                        arazi, yerel çevre ve ekipman sınırları ayrıca değerlendirilmelidir.</p>
-                    <p>Kaynak: NASA MGS/TES · Montabone ve diğerleri (2023), NASA PDS.</p>
-                    <a href="https://doi.org/10.17189/kwez-jq47" target="_blank" rel="noopener noreferrer">Veri kümesi ve DOI</a><br>
-                    <a href="https://atmos.nmsu.edu/PDS/data/PDS4/mgs_tes_atmos_dust-ice/document/user_guide_TES_COD.pdf" target="_blank" rel="noopener noreferrer">Bilimsel kullanıcı kılavuzu</a><br>
-                    <a id="dust-map-source" hidden target="_blank" rel="noopener noreferrer">Seçili NASA sayısal ürünü</a>
+                    <summary>Source and scientific limits</summary>
+                    <p>11 sample periods are shown; this is not the full archive or a continuous daily series.
+                        Grid spacing is 6° × 3°; zooming in does not create new measurements.
+                        Daily maps can combine observations from a 1–7 sol window.</p>
+                    <p>This is not a current weather forecast or a rover's local temperature/wind measurement.
+                        Dates are not matched to the selected route. Route safety for an astronaut also
+                        needs terrain, local conditions and equipment limits to be assessed separately.</p>
+                    <p>Source: NASA MGS/TES · Montabone et al. (2023), NASA PDS.</p>
+                    <a href="https://doi.org/10.17189/kwez-jq47" target="_blank" rel="noopener noreferrer">Dataset and DOI</a><br>
+                    <a href="https://atmos.nmsu.edu/PDS/data/PDS4/mgs_tes_atmos_dust-ice/document/user_guide_TES_COD.pdf" target="_blank" rel="noopener noreferrer">Scientific user guide</a><br>
+                    <a id="dust-map-source" hidden target="_blank" rel="noopener noreferrer">Selected NASA data product</a>
                     <small id="dust-map-id"></small>
                 </details>
             </div>
             <div id="temperature-map-panel" class="scientific-map-panel" hidden>
-                <p class="science-badge">Tarihsel gündüz yüzeyi · hesaplanmış ortalama · 6° × 3°</p>
-                <label for="temperature-map-product">Sıcaklık gözlem dönemi</label>
+                <p class="science-badge">Historical daytime surface · computed average · 6° × 3°</p>
+                <label for="temperature-map-product">Temperature observation period</label>
                 <select id="temperature-map-product" disabled aria-describedby="temperature-map-period"></select>
                 <p id="temperature-map-status" role="status" aria-live="polite"></p>
-                <button id="temperature-map-retry" type="button" hidden>Veriyi yeniden yükle</button>
+                <button id="temperature-map-retry" type="button" hidden>Reload data</button>
                 <p id="temperature-map-period"></p>
-                <div id="temperature-map-legend" class="scientific-map-legend" aria-label="Yüzey sıcaklığı renk ölçeği">
+                <div id="temperature-map-legend" class="scientific-map-legend" aria-label="Surface temperature colour scale">
                     <div id="temperature-map-ramp" class="scientific-map-ramp"></div>
                     <div class="elevation-labels"><span>≤−130 °C</span><span>−45 °C</span><span>≥40 °C</span></div>
-                    <p>Yüzey sıcaklığı · bölgesel ortalama<br>Kelvin ölçümlerinden °C dönüşümü</p>
-                    <span class="dust-missing-key"></span> Gri: veri yok
+                    <p>Surface temperature · regional average<br>Converted to °C from kelvin measurements</p>
+                    <span class="dust-missing-key"></span> Grey: no data
                 </div>
-                <button id="temperature-map-sample" type="button" disabled>Merkezdeki sıcaklığı oku</button>
+                <button id="temperature-map-sample" type="button" disabled>Read the temperature at the centre</button>
                 <p id="temperature-map-reading" class="scientific-map-reading" role="status" aria-live="polite"></p>
                 <details class="science-notes">
-                    <summary>Sıcaklığın kaynağı ve sınırları</summary>
-                    <p>NASA MGS/TES'in yayımlanmış TSURF yüzey sıcaklıkları, Stargazing tarafından
-                        6° × 3° hücrelerde ağırlıksız ortalanır. Üç örnek tarih aralığı sunulur;
-                        yalnızca yerel güneş saati 13:00–15:00 arasındaki gözlemler kullanılır.</p>
-                    <p>Gri hücreler doldurulmaz. Yayılım gözlemlerin örnek standart sapmasıdır;
-                        ölçüm belirsizliği değildir. Kaynakta TSURF için ayrı bir ölçüm hatası verilmez.
-                        Yakın gözlemler birbiriyle ilişkili olabilir.</p>
-                    <p>Bu, hava sıcaklığı, termal atalet, günlük en düşük/en yüksek sıcaklık veya canlı
-                        tahmin değildir. Rover/görev tarihleri otomatik eşleştirilmez; astronotun
-                        rota güvenliği için yerel koşullar ve ekipman sınırları ayrıca gerekir.</p>
-                    <a href="https://doi.org/10.17189/kwez-jq47" target="_blank" rel="noopener noreferrer">NASA kaynak veri kümesi</a><br>
-                    <a href="https://atmos.nmsu.edu/PDS/data/PDS4/mgs_tes_atmos_dust-ice/document/user_guide_TES_COD.pdf" target="_blank" rel="noopener noreferrer">TSURF bilimsel tanımı</a><br>
-                    <a id="temperature-map-source" hidden target="_blank" rel="noopener noreferrer">Seçili NASA sayısal ürünü</a>
+                    <summary>Temperature source and limits</summary>
+                    <p>Published NASA MGS/TES TSURF surface temperatures, averaged without weighting by
+                        Stargazing in 6° × 3° cells. Three sample date ranges are shown;
+                        only observations between 13:00 and 15:00 local solar time are used.</p>
+                    <p>Grey cells are not filled in. The spread is the sample standard deviation of the
+                        observations, not measurement uncertainty. The source gives no separate measurement
+                        error for TSURF. Nearby observations may be correlated.</p>
+                    <p>This is not air temperature, thermal inertia, daily minimum/maximum temperature or a live
+                        forecast. Rover/mission dates are not matched automatically; astronaut route safety
+                        also needs local conditions and equipment limits.</p>
+                    <a href="https://doi.org/10.17189/kwez-jq47" target="_blank" rel="noopener noreferrer">NASA source dataset</a><br>
+                    <a href="https://atmos.nmsu.edu/PDS/data/PDS4/mgs_tes_atmos_dust-ice/document/user_guide_TES_COD.pdf" target="_blank" rel="noopener noreferrer">TSURF scientific definition</a><br>
+                    <a id="temperature-map-source" hidden target="_blank" rel="noopener noreferrer">Selected NASA data product</a>
                     <small id="temperature-map-id"></small>
                 </details>
             </div>
         </fieldset>
     </aside>
-    <p id="skybox-error" role="status" hidden>Yıldız haritası yüklenemedi. Sayfayı yenileyerek tekrar deneyin.</p>
-    <script type="module" src="app.js?v=36"></script>
+    <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
+    <script type="module" src="app.js?v=37"></script>
 </body>
 
 </html>

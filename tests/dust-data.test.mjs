@@ -23,10 +23,10 @@ test('all shipped NASA products match their hash, observation period, grid and m
 });
 
 test('a different date or mission-year product is rejected, with no nearest-date fallback', () => {
-    assert.throws(() => validateDustProduct(examples[0].product, examples[1].entry), /uyuşmuyor/);
+    assert.throws(() => validateDustProduct(examples[0].product, examples[1].entry), /does not match/);
     const changed = structuredClone(examples[0].product);
     changed.marsYear++;
-    assert.throws(() => validateDustProduct(changed, examples[0].entry), /uyuşmuyor/);
+    assert.throws(() => validateDustProduct(changed, examples[0].entry), /does not match/);
 });
 
 test('dateline cells wrap at their half-width and polar edge cells stay within the grid', () => {
@@ -52,7 +52,7 @@ test('missing data is distinct from a valid zero measurement', () => {
     assert.equal(sample.values.CDOD610, 0);
     const corrupted = structuredClone(product);
     corrupted.fields.CDOD610UNC[0] = 0;
-    assert.throws(() => validateDustProduct(corrupted, entry), /maskesi/);
+    assert.throws(() => validateDustProduct(corrupted, entry), /mask/);
 });
 
 test('display texture and numeric picker use the same cells, including both seam halves', () => {
@@ -89,5 +89,5 @@ test('a missing HTTP product fails instead of inventing an observation', async (
 test('the HTTP data path validates the selected product identity', async () => {
     await assert.rejects(fetchDustProduct(examples[1].entry, base, {
         fetcher: async () => new Response(examples[0].raw),
-    }), /bütünlüğü|uyuşmuyor/);
+    }), /integrity|does not match/);
 });
