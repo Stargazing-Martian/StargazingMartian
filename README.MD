@@ -137,6 +137,27 @@ Kaynaklar, yeniden üretim ve yorum sınırları:
 [NASA TES veri notları](data/science/tes-dust/README.md).
 Kontroller: `node --test tests/*.test.mjs`.
 
+## Yüzey sıcaklığı haritası
+
+**Bilimsel harita → Yüzey sıcaklığı · NASA TES** seçeneği, NASA'nın yayımlanmış
+sayısal `TSURF` gözlemlerinden hesaplanan bir ısı haritasını açar. Ocak,
+Mart–Nisan ve Temmuz–Ağustos 2004 için üç örnek gözlem aralığı sunulur.
+Yalnızca yerel gerçek güneş saati 13:00–15:00 arasındaki ölçümler kullanılır.
+
+**Merkezdeki sıcaklığı oku** veya **Shift+tıklama**, seçilen 6° × 3° hücredeki
+gözlemlerin ortalamasını °C/K olarak; gözlenen aralığı, örnek sayısını,
+yayılımını ve gerçek gözlem zamanlarını gösterir. Yayılım ölçüm hatası değildir.
+Gri alanlarda veri yoktur; bu alanlar doldurulmaz. Bu, hava sıcaklığı, termal
+atalet, günlük en düşük/en yüksek sıcaklık veya güncel hava tahmini değildir.
+
+Toz ve sıcaklık aynı mod yöneticisini kullanır; renkler ve aktif katmanlar
+birbirine karışmaz. CTOD, kamera, pinler ve rotalar korunur. Haritalar NASA
+gözlemlerinden Stargazing tarafından türetilmiştir; rover görev tarihleriyle
+otomatik eşleştirme veya rota güvenliği değerlendirmesi yapılmaz.
+
+Yöntem, kaynaklar ve yeniden üretim:
+[Yüzey sıcaklığı veri notları](data/science/tes-temperature/README.md).
+
 ## Mars arazi üretimi (v3)
 
 Mars yolu yeniden düzenlendi: blok tabanlı raster okuma, bilinear örnekleme,
