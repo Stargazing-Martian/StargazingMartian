@@ -1,3 +1,4 @@
+import { createSurfacePath } from '../routes/surface-path.js?v=1';
 const Cesium = globalThis.Cesium;
 
 // Mars-wide expedition corridors (built by scripts/build_corridors.py):
@@ -25,29 +26,33 @@ export async function loadCorridors() {
 export function createCorridorLayer(viewer, ellipsoid, data) {
     const nodesById = new Map(data.nodes.map(node => [node.id, node]));
     const corridors = new Map();
-    const add = (positions, z) => viewer.entities.add({
-        show: false, polyline: { positions, clampToGround: true, zIndex: z },
-    });
-
-    for (const info of data.corridors) {
-        const positions = Cesium.Cartesian3.fromDegreesArray(info.points.flat(), ellipsoid);
-        const corridor = {
-            ...info,
-            fromNode: nodesById.get(info.from),
-            toNode: nodesById.get(info.to),
-            positions,
-            casing: add(positions, 0),
-            fill: add(positions, 1),
-            hoverCasing: add(positions, 10),
-            hoverFill: add(positions, 11),
-            style: undefined,
-        };
-        corridor.hoverCasing.polyline.width = 8;
-        corridor.hoverCasing.polyline.material = color('#1b1410').withAlpha(.9);
-        corridor.hoverFill.polyline.width = 5;
-        corridor.hoverFill.polyline.material = color(FILL[info.difficulty]);
-        corridors.set(info.id, corridor);
+    const policyListeners = new Set();
+    const policyControl = document.getElementById('radiation-routing');
+    function material(style, info) {
+        return new Cesium.PolylineOutlineMaterialProperty({ color: style.fill(info),
+            outlineColor: color('#1b1410').withAlpha(style.casingAlpha),
+            outlineWidth: (style.casingWidth - style.fillWidth) / 2 });
     }
+    function build() {
+        for (const c of corridors.values()) {
+            c.path.destroy(); viewer.entities.remove(c.line); viewer.entities.remove(c.hover);
+        }
+        corridors.clear();
+        for (const original of data.corridors) {
+            const info = policyControl.checked && original.radiationAware
+                ? { ...original, ...original.radiationAware } : original;
+            if (!info.render) continue;
+            const line = viewer.entities.add({ show: false, polyline: { positions: [], clampToGround: false, arcType: Cesium.ArcType.NONE } });
+            const hover = viewer.entities.add({ show: false, polyline: { positions: [], clampToGround: false, arcType: Cesium.ArcType.NONE,
+                width: 8, material: new Cesium.PolylineOutlineMaterialProperty({ color: color(FILL[info.difficulty]), outlineColor: color('#1b1410'), outlineWidth: 1.5 }) } });
+            const path = createSurfacePath(viewer, ellipsoid, info.render.points, positions => {
+                line.polyline.positions = positions.slice(); hover.polyline.positions = line.polyline.positions;
+            });
+            corridors.set(info.id, { ...info, line, hover, path, positions: path.positions,
+                fromNode: nodesById.get(info.from), toNode: nodesById.get(info.to), style: undefined });
+        }
+    }
+    build();
 
     let enabled = false; // stage 2 onwards
     let missionFocus = false; // a mission is selected: hide the network
@@ -59,16 +64,14 @@ export function createCorridorLayer(viewer, ellipsoid, data) {
             const style = id === selectedId ? STYLE.selected : STYLE.idle;
             if (c.style === style) continue;
             c.style = style;
-            c.casing.polyline.width = style.casingWidth;
-            c.casing.polyline.material = color('#1b1410').withAlpha(style.casingAlpha);
-            c.fill.polyline.width = style.fillWidth;
-            c.fill.polyline.material = style.fill(c);
-            const lift = id === selectedId ? 4 : 0;
-            c.casing.polyline.zIndex = lift;
-            c.fill.polyline.zIndex = lift + 1;
+            c.line.polyline.width = style.casingWidth;
+            c.line.polyline.material = material(style, c);
         }
     }
     restyle();
+    policyControl.addEventListener('change', () => {
+        build(); restyle(); policyListeners.forEach(listener => listener()); viewer.scene.requestRender();
+    });
 
     // Destination markers (mission sites already have pins).
     const layer = document.createElement('div');
@@ -89,8 +92,9 @@ export function createCorridorLayer(viewer, ellipsoid, data) {
         const distance = Cesium.Cartesian3.magnitude(viewer.camera.positionWC);
         visible = enabled && !missionFocus && distance < SHOW_BELOW_DISTANCE;
         for (const [id, c] of corridors) {
-            c.casing.show = c.fill.show = visible;
-            c.hoverCasing.show = c.hoverFill.show = visible && id === hoveredId && id !== selectedId;
+            c.path.update(visible && id === selectedId);
+            c.line.show = visible;
+            c.hover.show = visible && id === hoveredId && id !== selectedId;
         }
     });
 
@@ -118,8 +122,9 @@ export function createCorridorLayer(viewer, ellipsoid, data) {
     }
 
     return {
-        enable() { enabled = true; },
-        setMissionFocus(value) { missionFocus = value; },
+        onPolicyChange(listener) { policyListeners.add(listener); },
+        enable() { enabled = true; viewer.scene.requestRender(); },
+        setMissionFocus(value) { missionFocus = value; viewer.scene.requestRender(); },
         get(id) { return corridors.get(id); },
         // Screen-space hit test, as for rover routes. Returns a corridor id.
         hitTest(windowPosition, tolerancePx) {
@@ -140,7 +145,7 @@ export function createCorridorLayer(viewer, ellipsoid, data) {
             }
             return best;
         },
-        select(id) { selectedId = id; hoveredId = undefined; restyle(); },
-        hover(id) { hoveredId = id; },
+        select(id) { selectedId = id; hoveredId = undefined; restyle(); viewer.scene.requestRender(); },
+        hover(id) { if (id !== hoveredId) { hoveredId = id; viewer.scene.requestRender(); } },
     };
 }

@@ -2,6 +2,7 @@ import { DUST_STOPS, dustPixels, fetchDustProduct, sampleDust } from './dust-dat
 import { TEMPERATURE_STOPS, temperaturePixels, fetchTemperatureProduct,
     sampleTemperature, kelvinToCelsius } from './temperature-data.js?v=2';
 import { matchingPeriods } from './mission-environment-data.js?v=2';
+import { createRadiationMap } from './radiation-map.js?v=1';
 
 const formatDate = value => new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
@@ -60,6 +61,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
     let layer, activeProduct, activeView, pending, context;
     let generation = 0, destroyed = false;
     const cache = new Map();
+    const radiation = createRadiationMap(viewer, ellipsoid, surfaceControls);
 
     async function getCatalog(view) {
         if (!view.catalogPromise) {
@@ -97,6 +99,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
     }
 
     function clearLayer() {
+        radiation.deactivate();
         if (layer) viewer.imageryLayers.remove(layer, true);
         layer = activeProduct = activeView = undefined;
         surfaceControls.setScientificMode(false);
@@ -117,6 +120,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
         pending?.abort();
         clearLayer();
         for (const view of Object.values(views)) view.panel.hidden = mode.value !== view.key;
+        if (mode.value === 'radiation' && !destroyed) { await radiation.activate(); return; }
         const view = views[mode.value];
         if (!view || destroyed) return;
         view.status.dataset.state = 'loading';
@@ -201,6 +205,7 @@ export function createScienceMaps(viewer, ellipsoid, surfaceControls) {
     }
 
     function inspect(position) {
+        if (mode.value === 'radiation') { radiation.inspect(position); return; }
         if (!activeProduct || !activeView) return;
         const ray = viewer.camera.getPickRay(position);
         const hit = ray && viewer.scene.globe.pick(ray, viewer.scene);

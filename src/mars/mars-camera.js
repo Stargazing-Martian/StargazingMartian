@@ -15,6 +15,7 @@ export function createMarsCamera(container, viewer) {
     const TILT = Cesium.Math.toRadians(25.19);
     const SPEED = 0.00009;
     const DURATION = 1400;
+    const openingStart = performance.now();
     const standardFov = viewer.camera.frustum.fov;
 
     // Aim the camera beside Mars rather than moving/clipping the canvas.
@@ -32,7 +33,7 @@ export function createMarsCamera(container, viewer) {
         const tanHalfY = height / (2 * Math.min(width, height)) * Math.tan(Math.PI / 6);
         const openingFov = 2 * Math.atan(tanHalfY * Math.max(1, aspect));
         frustum.fov = standardFov + (openingFov - standardFov) * introAmount;
-        if (cinematicMode) {
+        if (cinematicMode && (previousTime === undefined || performance.now() - openingStart < 8000)) {
             const time = performance.now();
             const elapsed = previousTime === undefined ? 0 : Math.min(time - previousTime, 100);
             previousTime = time;
@@ -43,6 +44,9 @@ export function createMarsCamera(container, viewer) {
             );
             viewer.camera.lookLeft(Math.atan(0.55 * tanHalfY * aspect));
             viewer.camera.lookUp(Math.atan(0.65 * tanHalfY));
+            // Only the opening animation needs continuous frames. The settled
+            // view keeps exactly the same pixels without keeping the GPU busy.
+            viewer.scene.requestRender();
         }
         if (introAmount === 0) removeFraming();
     });

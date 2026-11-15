@@ -1,68 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-
-// Minimal Cesium adapter tests lifecycle/caching; real rendering is checked in-browser.
-class Property {
-    constructor(value) { this.value = value; }
-    getValue() { return this.value; }
+const event = () => { const callbacks = new Set(); return { addEventListener(f) { callbacks.add(f); return () => callbacks.delete(f); }, raise(...args) { callbacks.forEach(f => f(...args)); } }; };
+class Cartesian3 {
+    static fromDegrees(lon, lat, height = 0, ellipsoid, result = {}) { return Object.assign(result, { lon, lat, height }); }
+    static fromDegreesArray(a, e) { const out=[]; for(let i=0;i<a.length;i+=2)out.push(this.fromDegrees(a[i],a[i+1],0,e)); return out; }
+    static clone(a,b={}) { return Object.assign(b,a); }
+    static magnitude() { return 3397190; }
 }
-const graphics = values => new Proxy(Object.fromEntries(Object.entries(values).map(([k, v]) => [k, new Property(v)])), {
-    set(object, key, value) { object[key] = value === undefined ? undefined : new Property(value); return true; },
-});
-let requests = 0;
-globalThis.Cesium = {
-    Color: { fromCssColorString: css => css },
-    ArcType: { NONE: 0, GEODESIC: 1 },
-    Cartesian3: {
-        fromDegreesArray: values => Array.from({ length: values.length / 2 }, (_, i) =>
-            ({ longitude: values[i * 2], latitude: values[i * 2 + 1], height: 0 })),
-        fromRadians: (longitude, latitude, height, ellipsoid, result = {}) => Object.assign(result, { longitude, latitude, height }),
-        magnitude: point => point.magnitude,
-    },
-    Cartographic: { fromDegrees: (longitude, latitude) => ({ longitude, latitude }), clone: point => ({ ...point }) },
-    SceneTransforms: { worldToWindowCoordinates() {} },
-    async sampleTerrainMostDetailed(provider, points) {
-        ++requests;
-        return points.map(point => ({ ...point, height: provider.height }));
-    },
+globalThis.Cesium = { Cartesian3, Color: { fromCssColorString: c => c }, ArcType: { NONE: 0 },
+    Cartographic: { fromDegrees: (lon,lat) => ({lon,lat}) }, PolylineOutlineMaterialProperty: class { constructor(p) {Object.assign(this,p);} },
+    EllipsoidalOccluder: class { isPointVisible() {return true;} }, SceneTransforms: { worldToWindowCoordinates() {} },
 };
-const code = await readFile(new URL('../src/routes/route-layer.js', import.meta.url), 'utf8');
-const { createRouteLayer } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const {createRouteLayer} = await import('../src/routes/route-layer.js');
 
-test('negative terrain heights remain visible at 5x, reuse samples across 1x/5x and refresh on provider change', async () => {
-    const callbacks = [], entities = [];
-    const viewer = {
-        entities: { add(entity) { entity.polyline = graphics(entity.polyline); entities.push(entity); return entity; } },
-        camera: { positionWC: { magnitude: 3397190 } },
-        scene: { verticalExaggeration: 5, verticalExaggerationRelativeHeight: 0,
-            preRender: { addEventListener(callback) { callbacks.push(callback); } }, requestRender() {} },
-    };
-    const render = async () => { callbacks.forEach(callback => callback()); await Promise.resolve(); };
-    const layer = createRouteLayer(viewer, { maximumRadius: 3396190 }, new Map([['opportunity', {
-        points: [[-5.5, -1.9, 1], [-5.6, -2, 2]],
-        segments: [{ from: 0, to: 1, difficulty: 'easy' }],
-    }]]));
-    const endpointReference = layer.positionsOf('opportunity')[0];
-    layer.setTerrain({ height: -100 });
-    await render(); await render();
-    assert.equal(requests, 1);
-    assert.equal(endpointReference.height, -495); // DEM * 5 + visual lift; never a zero-height substitute.
-    assert.ok(entities.every(entity => entity.polyline.clampToGround.getValue() === false));
-    assert.ok(entities.every(entity => entity.polyline.zIndex === undefined));
-    assert.notEqual(entities[0].polyline.positions.getValue()[0].height, entities[1].polyline.positions.getValue()[0].height);
-
-    viewer.scene.verticalExaggeration = 1;
-    await render();
-    assert.equal(endpointReference.height, -100);
-    assert.ok(entities.every(entity => entity.polyline.clampToGround.getValue() === true));
-    viewer.scene.verticalExaggeration = 5;
-    await render();
-    assert.equal(requests, 1);
-    assert.equal(endpointReference.height, -495);
-
-    layer.setTerrain({ height: 200 });
-    await render(); await render();
-    assert.equal(requests, 2);
-    assert.equal(endpointReference.height, 1005);
+test('one outlined geometry preserves horizontal anchors at 1x/5x and uses rendered height once, with no tile downloads', async () => {
+    const entities=[], preRender=event(), moveEnd=event(), tileLoadProgressEvent=event();
+    let renderedHeight=-500, queries=0;
+    const viewer={ entities:{add(e){entities.push(e);return e;}},camera:{positionWC:{},moveEnd},
+      scene:{verticalExaggeration:5,verticalExaggerationRelativeHeight:0,preRender,requestRender(){},
+        globe:{tilesLoaded:true,tileLoadProgressEvent,getHeight(){queries++;return renderedHeight;}}}};
+    const points=[[-5,-2,1],[-5.001,-2,2]], original=JSON.stringify(points);
+    const layer=createRouteLayer(viewer,{maximumRadius:3396190,scaleToGeodeticSurface:p=>p},new Map([['opportunity',{
+      points,render:{terrainVersion:'a',anchors:[0,1],points:[[-5,-2,-100],[-5.001,-2,-100]]},segments:[{from:0,to:1,difficulty:'easy'}]}]]));
+    layer.setTerrain({},'a'); preRender.raise(); await new Promise(r=>setTimeout(r,20));
+    assert.equal(entities.length,2); // one outline plus reusable hover
+    assert.equal(layer.positionsOf('opportunity')[0].height,-497);
+    assert.equal(queries,2);
+    preRender.raise(); await new Promise(r=>setTimeout(r,10)); assert.equal(queries,2); // idle does no sampling
+    viewer.scene.verticalExaggeration=1; renderedHeight=-100; preRender.raise(); await new Promise(r=>setTimeout(r,20));
+    assert.equal(layer.positionsOf('opportunity')[0].height,-97);
+    assert.equal(JSON.stringify(points),original);
+    assert.ok(entities.every(e=>e.polyline.clampToGround===false));
+    layer.setTerrain({},'wrong-version'); preRender.raise(); assert.equal(layer.isShown('opportunity'),false);
 });

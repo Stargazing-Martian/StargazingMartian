@@ -1,19 +1,19 @@
-import { createVikingImagery } from '../nasa/nasa-layers.js';
+import { createSurfaceImagery } from '../nasa/nasa-layers.js?v=2';
 import { MARS_RADIUS, initialTerrainUrl, normalizeTerrainUrl, terrainTimeoutMs } from './config.js?v=7';
-import { createTerrainControls } from '../ui/terrain-controls.js?v=9';
+import { createTerrainControls } from '../ui/terrain-controls.js?v=10';
 import { createMissionEnvironment } from '../ui/mission-environment.js?v=2';
-import { createScienceMaps } from '../science/science-map.js?v=3';
+import { createScienceMaps } from '../science/science-map.js?v=4';
 import { monitorTerrain } from './terrain-monitor.js';
-import { createMarsCamera } from './mars-camera.js?v=6';
+import { createMarsCamera } from './mars-camera.js?v=7';
 import { createMarsSkybox } from './mars-skybox.js';
 import { MISSIONS } from '../missions/mission-data.js?v=12';
 import { createMissionPins } from '../missions/mission-pins.js?v=10';
-import { createMissionSelection } from '../missions/mission-selection.js?v=26';
-import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=26';
+import { createMissionSelection } from '../missions/mission-selection.js?v=27';
+import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=27';
 import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
-import { createMissionPanel } from '../ui/mission-panel.js?v=4';
+import { createMissionPanel } from '../ui/mission-panel.js?v=5';
 import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
-import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=3';
+import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=4';
 
 (async () => {
     const container = document.getElementById("mars-globe");
@@ -44,7 +44,12 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
         animation:            false,
         timeline:             false,
         skyBox:               false,
-        shouldAnimate:        true
+        shouldAnimate:        false,
+        requestRenderMode:    true,
+        maximumRenderTimeChange: Infinity,
+        // Native display pixels, including Retina. Performance work must not
+        // silently render a smaller canvas or lower the source tile detail.
+        useBrowserRecommendedResolution: false
     });
 
     void createMarsSkybox(viewer).catch(error => {
@@ -60,9 +65,11 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
     viewer.scene.globe.baseColor            = new Cesium.Color(0.12, 0.06, 0.03, 1.0);
     viewer.scene.globe.showGroundAtmosphere = false;
     viewer.scene.globe.enableLighting       = true;
-    // Cesium default. 1 loads ~4x more imagery tiles and made zooming stutter.
     viewer.scene.globe.maximumScreenSpaceError = 2;
     viewer.scene.globe.tileCacheSize = 512;
+    // Load a usable parent before fanning out into many missing children.
+    // This changes scheduling only; the final tile level stays unchanged.
+    viewer.scene.globe.loadingDescendantLimit = 4;
     viewer.scene.light = new Cesium.DirectionalLight({
         direction: new Cesium.Cartesian3(1.0, 0.0, 0.0),
         color:     Cesium.Color.WHITE,
@@ -89,7 +96,7 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
     selection = createMissionSelection(viewer, ellipsoid, { pins, routes, missions: MISSIONS, corridors });
     createMissionPanel(selection, routes, await photoData, createPhotoViewer());
 
-    const imagery  = viewer.imageryLayers.addImageryProvider(createVikingImagery(ellipsoid));
+    const imagery  = createSurfaceImagery(viewer, ellipsoid);
     const controls = createTerrainControls(viewer, imagery);
     const scienceMaps = createScienceMaps(viewer, ellipsoid, controls);
     environment = createMissionEnvironment(MISSIONS, scienceMaps, async mission => {
@@ -165,7 +172,7 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
                 }
             });
             viewer.terrainProvider = provider;
-            routes.setTerrain(provider);
+            routes.setTerrain(provider, metadata.version);
             controls.setReady(true);
             const coverage = document.getElementById('terrain-coverage');
             if (metadata.staticCoverage) {
@@ -175,6 +182,8 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
                 coverage.hidden = false;
             }
             setStatus(readyText, 'ready');
+            document.getElementById('terrain-source').textContent =
+                `Terrain: ${new URL(url, location.href).origin}${new URL(url, location.href).pathname} · ${metadata.version}`;
         } catch (error) {
             if (current !== generation) return;
             console.error('Mars terrain unavailable', error);
@@ -194,6 +203,18 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
         Cesium.Cartesian3.multiplyByScalar(viewer.camera.upWC, -.35, lightOffset);
         Cesium.Cartesian3.add(direction, lightOffset, direction);
         Cesium.Cartesian3.normalize(direction, direction);
+    });
+
+    // Do not expose an empty dark globe while its first surface tiles arrive.
+    const revealSurface = viewer.scene.postRender.addEventListener(() => {
+        if (viewer.scene.globe.tilesLoaded && status.dataset.state !== 'loading') {
+            container.dataset.surfaceReady = 'true';
+            revealSurface();
+        }
+    });
+    document.addEventListener('visibilitychange', () => {
+        viewer.useDefaultRenderLoop = !document.hidden;
+        if (!document.hidden) { viewer.resize(); viewer.scene.requestRender(); }
     });
 
     // Enabled on every host, including GitHub Pages. The source lives in site-config.js.

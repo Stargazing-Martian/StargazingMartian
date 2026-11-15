@@ -4,7 +4,7 @@ Usage: python3 scripts/build_routes.py [raw_dir]
 
 Downloads each source into raw_dir (default: ./.cache/raw-routes) if it is
 missing, converts it to [lon, lat, sol] points (east-positive degrees, sol may
-be null), smooths it, thins it with Douglas-Peucker and writes compact JSON.
+be null) and preserves the source vertices without horizontal smoothing.
 """
 import csv, json, math, sys, urllib.request
 from pathlib import Path
@@ -164,11 +164,14 @@ def spirit_lonlat(x, y):
 
 
 def opportunity_lonlat(x, y):
-    # Metres east/north of the Eagle crater landing site.
-    lat0, lon0 = -1.9462, 354.4734
-    lat = lat0 + math.degrees(y / MARS_RADIUS)
-    lon = lon0 + math.degrees(x / (MARS_RADIUS * math.cos(math.radians(lat0))))
-    return lon, lat
+    # Analyst's Notebook MerB_point: spherical Transverse Mercator, k=1,
+    # lon_0=-5.525785, lat_0=-1.9487931, false easting/northing=0.
+    # https://an.rsl.wustl.edu/help/Content/Using%20the%20Notebook/Main%20sections/Maps/Traverse%20map.htm
+    # Inverse spherical TM, not an approximate east/north offset from a pin.
+    b = y / MARS_RADIUS + math.radians(-1.9487931)
+    lat = math.asin(math.sin(b) / math.cosh(x / MARS_RADIUS))
+    lon = math.radians(-5.525785) + math.atan2(math.sinh(x / MARS_RADIUS), math.cos(b))
+    return math.degrees(lon), math.degrees(lat)
 
 
 def to_metres(points):
@@ -282,13 +285,16 @@ def main():
         for lon, lat, sol in points:
             lon = (lon + 180) % 360 - 180
             if not cleaned or (cleaned[-1][0], cleaned[-1][1]) != (lon, lat):
-                cleaned.append([round(lon, 6), round(lat, 6), sol])
+                cleaned.append([lon, lat, sol])
         # Sols only ever go forward along a traverse.
         latest = 0
         for p in cleaned:
             latest = p[2] = max(latest, p[2] or 0)
-        thinned = simplify(smooth(cleaned, STEP_M, SIGMA_M), TOLERANCE_M)
+        thinned = cleaned
         data = {'mission': mission, 'source': url, 'lengthKm': round(length_km(cleaned), 2),
+                'geometryProcessing': 'Source vertices retained; no horizontal smoothing or simplification. Consecutive duplicate coordinates removed.',
+                'timeBasis': ('Nearest drive-end waypoint sol; approximate phase assignment, not an observation timestamp.'
+                              if mission == 'curiosity' else 'Source traverse sol; not a UTC observation timestamp.'),
                 'segments': split_phases(thinned, PHASES[mission], cleaned), 'points': thinned}
         waypoints = WAYPOINTS.get(mission) and [
             f['properties'] for f in json.loads(fetch(WAYPOINTS[mission], raw_dir).read_text())['features']]

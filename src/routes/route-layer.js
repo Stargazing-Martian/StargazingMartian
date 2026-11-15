@@ -1,3 +1,4 @@
+import { createSurfacePath } from './surface-path.js?v=1';
 const Cesium = globalThis.Cesium;
 
 // Routes are tiny on a whole-planet view, so they only appear once the camera
@@ -39,95 +40,35 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
     let terrainProvider;
 
     function addLine(positions) {
-        return viewer.entities.add({
-            show: false,
-            polyline: { positions, clampToGround: true },
+        return viewer.entities.add({ show: false,
+            polyline: { positions, clampToGround: false, arcType: Cesium.ArcType.NONE } });
+    }
+    function setStyle(entity, style) {
+        entity.polyline.width = style.casingWidth;
+        entity.polyline.material = new Cesium.PolylineOutlineMaterialProperty({
+            color: style.fill, outlineColor: style.casing,
+            outlineWidth: (style.casingWidth - style.fillWidth) / 2,
         });
     }
-
-    function setStyle(pair, style) {
-        const onGround = pair.casing.polyline.clampToGround.getValue();
-        pair.casing.polyline.width = style.casingWidth;
-        pair.casing.polyline.material = style.casing;
-        pair.casing.polyline.zIndex = onGround ? style.z : undefined;
-        pair.fill.polyline.width = style.fillWidth;
-        pair.fill.polyline.material = style.fill;
-        pair.fill.polyline.zIndex = onGround ? style.z + 1 : undefined;
-    }
-
     for (const [id, data] of routeData) {
+        if (!data.render) { console.error(`Route ${id}: missing prepared terrain geometry`); continue; }
         const positions = Cesium.Cartesian3.fromDegreesArray(
             data.points.flatMap(([lon, lat]) => [lon, lat]), ellipsoid);
-        const segments = data.segments.map(info => {
-            const part = positions.slice(info.from, info.to + 1);
-            const segment = {
-                ...info,
-                positions: part,
-                line: { casing: addLine(part), fill: addLine(part) },
-                hover: { casing: addLine(part), fill: addLine(part) },
-                style: undefined,
-            };
-            setStyle(segment.hover, STYLE.hover);
-            return segment;
+        const segments = data.segments.map(info => ({ ...info,
+            positions: positions.slice(info.from, info.to + 1),
+            line: addLine([]), style: undefined,
+        }));
+        const hover = addLine([]);
+        setStyle(hover, STYLE.hover);
+        const path = createSurfacePath(viewer, ellipsoid, data.render.points, drawing => {
+            data.render.anchors.forEach((index, i) => Cesium.Cartesian3.fromDegrees(
+                data.points[i][0], data.points[i][1], drawing[index].height, ellipsoid, positions[i]));
+            for (const segment of segments) segment.line.polyline.positions =
+                drawing.slice(data.render.anchors[segment.from], data.render.anchors[segment.to] + 1);
+            const hit = segments[hovered?.id === id ? hovered.segment : -1];
+            if (hit) hover.polyline.positions = hit.line.polyline.positions;
         });
-        routes.set(id, { positions, segments, shown: false,
-            cartographics: data.points.map(([lon, lat]) => Cesium.Cartographic.fromDegrees(lon, lat)) });
-    }
-
-    // Cesium ground-polyline classification can clip exaggerated Mars heights.
-    // At 5x, draw ordinary lines at sampled DEM heights instead. Fetch only
-    // visible routes, once per provider; scale switches reuse those same samples.
-    function updateHeights(route) {
-        if (!route.heights) return;
-        const scale = viewer.scene.verticalExaggeration;
-        const relativeHeight = viewer.scene.verticalExaggerationRelativeHeight;
-        if (route.displayScale === scale && route.relativeHeight === relativeHeight) return;
-        route.displayScale = scale;
-        route.relativeHeight = relativeHeight;
-        const raised = scale !== 1;
-        const drawing = [[], [], [], []];
-        route.cartographics.forEach((point, i) => {
-            const height = (route.heights[i] - relativeHeight) * scale + relativeHeight + (raised ? 5 : 0);
-            Cesium.Cartesian3.fromRadians(point.longitude, point.latitude, height, ellipsoid, route.positions[i]);
-            if (raised) {
-                // Separate casing/fill/hover slightly to prevent coplanar depth
-                // flicker; zIndex applies only to ground classification lines.
-                for (let j = 0; j < drawing.length; ++j) {
-                    drawing[j].push(Cesium.Cartesian3.fromRadians(point.longitude, point.latitude, height + j, ellipsoid));
-                }
-            }
-        });
-        for (const segment of route.segments) {
-            let layerIndex = 0;
-            for (const pair of [segment.line, segment.hover]) {
-                for (const entity of [pair.casing, pair.fill]) {
-                    entity.polyline.zIndex = undefined;
-                    entity.polyline.clampToGround = !raised;
-                    entity.polyline.arcType = raised ? Cesium.ArcType.NONE : Cesium.ArcType.GEODESIC;
-                    entity.polyline.positions = raised ? drawing[layerIndex].slice(segment.from, segment.to + 1) : segment.positions.slice();
-                    ++layerIndex;
-                }
-            }
-            setStyle(segment.line, segment.style);
-            setStyle(segment.hover, STYLE.hover);
-        }
-        viewer.scene.requestRender();
-    }
-
-    async function sampleRouteHeights(id, route) {
-        const provider = terrainProvider;
-        route.heightAttempt = provider;
-        try {
-            const samples = await Cesium.sampleTerrainMostDetailed(provider,
-                route.cartographics.map(point => Cesium.Cartographic.clone(point)), true);
-            if (terrainProvider !== provider) return;
-            if (samples.some(point => !Number.isFinite(point.height))) throw new Error('Missing route terrain heights');
-            route.heights = samples.map(point => point.height);
-            route.displayScale = undefined;
-            updateHeights(route);
-        } catch (error) {
-            console.warn(`Route ${id}: terrain alignment unavailable`, error);
-        }
+        routes.set(id, { positions, segments, hover, path, data, shown: false });
     }
 
     let selectedId;
@@ -157,15 +98,14 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
         const height = Cesium.Cartesian3.magnitude(viewer.camera.positionWC) - ellipsoid.maximumRadius;
         const close = height < SHOW_BELOW_HEIGHT;
         for (const [id, route] of routes) {
-            route.shown = close || id === selectedId;
-            if (route.shown && terrainProvider && viewer.scene.verticalExaggeration !== 1 &&
-                route.heightAttempt !== terrainProvider) void sampleRouteHeights(id, route);
-            updateHeights(route);
-            route.segments.forEach((segment, index) => {
-                segment.line.casing.show = segment.line.fill.show = route.shown;
-                const isHovered = route.shown && hovered?.id === id && hovered.segment === index;
-                segment.hover.casing.show = segment.hover.fill.show = isHovered;
-            });
+            const compatible = terrainProvider && route.data.render.terrainVersion === terrainProvider.stargazingVersion;
+            const anchor = ellipsoid.scaleToGeodeticSurface(route.positions[0], new Cesium.Cartesian3());
+            const facing = new Cesium.EllipsoidalOccluder(ellipsoid, viewer.camera.positionWC).isPointVisible(anchor);
+            route.shown = Boolean(compatible && facing && (close || id === selectedId));
+            route.path.update(route.shown);
+            route.segments.forEach(segment => { segment.line.show = route.shown; });
+            route.hover.show = route.shown && hovered?.id === id;
+
         }
     });
 
@@ -180,7 +120,7 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
     }
 
     return {
-        setTerrain(provider) { terrainProvider = provider; },
+        setTerrain(provider, version) { terrainProvider = provider; provider.stargazingVersion = version; viewer.scene.requestRender(); },
         positionsOf(id, segment) {
             const route = routes.get(id);
             return segment === undefined ? route?.positions : route?.segments[segment]?.positions;
@@ -220,11 +160,21 @@ export function createRouteLayer(viewer, ellipsoid, routeData) {
             selectedSegment = undefined;
             hovered = undefined;
             restyle();
+            viewer.scene.requestRender();
         },
         selectSegment(index) {
             selectedSegment = index;
             restyle();
+            viewer.scene.requestRender();
         },
-        hover(hit) { hovered = hit; },
+        hover(hit) {
+            if (hovered?.id === hit?.id && hovered?.segment === hit?.segment) return;
+            hovered = hit;
+            if (hit) {
+                const route = routes.get(hit.id);
+                route.hover.polyline.positions = route.segments[hit.segment].line.polyline.positions;
+            }
+            viewer.scene.requestRender();
+        },
     };
 }
