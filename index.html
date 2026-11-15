@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=31">
+    <link rel="stylesheet" href="style.css?v=32">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -73,11 +73,15 @@
         <div class="map-modes" role="radiogroup" aria-label="Map mode">
             <button type="button" class="map-mode" role="radio" data-mode="dust" aria-checked="false">
                 <img src="assets/previews/dust.png" alt="" width="360" height="180">
-                <span>Atmospheric dust</span>
+                <span>Dust</span>
             </button>
             <button type="button" class="map-mode" role="radio" data-mode="surface" aria-checked="true">
                 <img src="assets/previews/terrain.png" alt="" width="360" height="180">
                 <span>Terrain</span>
+            </button>
+            <button type="button" class="map-mode" role="radio" data-mode="topography" aria-checked="false">
+                <img src="assets/previews/topography.png" alt="" width="360" height="180">
+                <span>Topography</span>
             </button>
             <button type="button" class="map-mode" role="radio" data-mode="temperature" aria-checked="false">
                 <img src="assets/previews/temperature.png" alt="" width="360" height="180">
@@ -168,7 +172,7 @@
             <p id="science-map-context" class="science-notes">Free archive browsing · no mission/date association.</p>
             <fieldset id="relief-controls" disabled>
                 <legend>Surface view</legend>
-                <label><input type="checkbox" id="topography" checked> Topographic mode</label>
+                <label><input type="checkbox" id="topography"> Topographic mode</label>
                 <label for="relief-scale">Height scale</label>
                 <select id="relief-scale">
                     <option value="1">1× — true height</option>
@@ -224,7 +228,7 @@
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
     <script src="site-config.js?v=1"></script>
-    <script type="module" src="app.js?v=45"></script>
+    <script type="module" src="app.js?v=46"></script>
 </body>
 
 </html>

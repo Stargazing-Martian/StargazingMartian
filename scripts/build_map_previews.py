@@ -4,6 +4,7 @@ Usage: .cache/venv/bin/python scripts/build_map_previews.py
 (needs numpy; the MOLA DEM is cached in .cache/mola by build_corridors.py)
 
   terrain.png      MOLA MEGDR topography, hillshaded, in Mars tones
+  topography.png   MOLA heights in the globe's elevation colour ramp
   dust.png         TES dust optical depth (same colour scale as the map)
   temperature.png  TES daytime surface temperature (same colour scale)
 """
@@ -59,11 +60,31 @@ def grid_to_image(values):
     return grid[rows[:, None], cols[None, :]]
 
 
-def terrain():
+TOPO_STOPS = [(0, (0x17, 0x2b, 0x70)), (.2, (0x39, 0x8d, 0xb0)), (.35, (0x83, 0xb5, 0xa2)),
+              (.5, (0xd4, 0xc1, 0x7d)), (.7, (0xb9, 0x74, 0x44)), (.85, (0x97, 0x48, 0x39)),
+              (1, (0xff, 0xf0, 0xdc))]
+
+
+def mola():
     z = np.fromfile(ROOT / '.cache' / 'mola' / 'megt90n000eb.img', dtype='>i2').astype(float)
     z = z.reshape(2880, 5760).reshape(H, 16, 2 * W, 8).mean(axis=(1, 3))   # 2 px/deg wide
     z = z.reshape(H, W, 2).mean(axis=2)                                      # 1 px/deg
-    z = np.roll(z, W // 2, axis=1)                                           # 0..360 -> -180..180
+    return np.roll(z, W // 2, axis=1)                                        # 0..360 -> -180..180
+
+
+def hillshade(z):
+    gy, gx = np.gradient(z)
+    return np.clip(0.75 + (gx * -0.6 + gy * 0.6) / 900, 0.35, 1.25)       # light from upper left
+
+
+def topography():
+    # Same ramp and range (-8 to +22 km) as the globe's topographic mode.
+    z = mola()
+    return np.clip(ramp((z + 8000) / 30000, TOPO_STOPS) * (0.55 + 0.45 * hillshade(z)[..., None]), 0, 255)
+
+
+def terrain():
+    z = mola()
     gy, gx = np.gradient(z)
     shade = np.clip(0.75 + (gx * -0.6 + gy * 0.6) / 900, 0.35, 1.25)       # light from upper left
     t = np.clip((z - z.min()) / (np.percentile(z, 99) - z.min()), 0, 1)
@@ -86,6 +107,7 @@ def science(file, field, stops, normalise):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     write_png(OUT / 'terrain.png', terrain())
+    write_png(OUT / 'topography.png', topography())
     write_png(OUT / 'dust.png', science(f'tes-dust/{DUST_FILE}', 'CDOD610', DUST_STOPS, lambda v: v / 3))
     write_png(OUT / 'temperature.png', science(f'tes-temperature/{TEMPERATURE_FILE}', 'MEAN_K',
                                                TEMPERATURE_STOPS, lambda k: (k - 273.15 + 130) / 170))

@@ -985,3 +985,17 @@ body {
     /* Phones: the map panel goes to the top so the mission panel keeps the bottom. */
     #terrain-panel { top: 72px; bottom: auto; right: 16px; max-height: 40vh; }
 }
+
+/* Four map modes in one row. */
+.map-modes { grid-template-columns: repeat(4, 1fr); gap: 7px; }
+#terrain-panel .map-mode { font-size: 10.5px; }
+/* The topographic switch is now a tile of its own. */
+.map-more #relief-controls label:has(#topography) { display: none; }
+
+/* The map panel belongs to exploring: hidden on the showcase, eases in after. */
+body:not(.is-exploring) #terrain-panel { display: none; }
+.is-exploring #terrain-panel { animation: panel-in .35s ease-out .3s both; }
+
+/* No pill behind the small logo while exploring. */
+#site-logo::before { display: none; }
+.is-exploring #site-logo svg { filter: drop-shadow(0 1px 6px rgb(0 0 0 / .6)); }
