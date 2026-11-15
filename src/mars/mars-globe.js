@@ -6,12 +6,12 @@ import { monitorTerrain } from './terrain-monitor.js';
 import { createMarsCamera } from './mars-camera.js?v=6';
 import { createMarsSkybox } from './mars-skybox.js';
 import { MISSIONS } from '../missions/mission-data.js?v=12';
-import { createMissionPins } from '../missions/mission-pins.js?v=10';
+import { createMissionPins } from '../missions/mission-pins.js?v=11';
 import { createMissionSelection } from '../missions/mission-selection.js?v=26';
 import { createRouteLayer, loadRoutes } from '../routes/route-layer.js?v=25';
 import { createRouteEndpoints } from '../routes/route-endpoints.js?v=1';
-import { createMissionPanel } from '../ui/mission-panel.js?v=4';
-import { createPhotoViewer } from '../ui/photo-viewer.js?v=4';
+import { createMissionPanel } from '../ui/mission-panel.js?v=5';
+import { createPhotoViewer } from '../ui/photo-viewer.js?v=5';
 import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js?v=3';
 
 (async () => {
@@ -59,8 +59,15 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
     viewer.scene.globe.baseColor            = new Cesium.Color(0.12, 0.06, 0.03, 1.0);
     viewer.scene.globe.showGroundAtmosphere = false;
     viewer.scene.globe.enableLighting       = true;
-    // Cesium default. 1 loads ~4x more imagery tiles and made zooming stutter.
-    viewer.scene.globe.maximumScreenSpaceError = 2;
+    // Render at the screen's real pixel density (capped at 2x) so route
+    // lines are crisp on Retina, and smooth their edges with FXAA. The tile
+    // error budget is scaled by the same factor, so the same imagery tiles
+    // load as before (1x with error 2 kept zooming smooth).
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    viewer.useBrowserRecommendedResolution = false;
+    viewer.resolutionScale = pixelRatio / (window.devicePixelRatio || 1);
+    viewer.scene.globe.maximumScreenSpaceError = 2 * pixelRatio;
+    viewer.scene.postProcessStages.fxaa.enabled = true;
     viewer.scene.globe.tileCacheSize = 512;
     viewer.scene.light = new Cesium.DirectionalLight({
         direction: new Cesium.Cartesian3(1.0, 0.0, 0.0),
@@ -77,6 +84,8 @@ import { createCorridorLayer, loadCorridors } from '../network/corridor-layer.js
         onSelect: mission => selection.select(mission),
     });
     onEnterInteractive(() => pins.enable());
+    // The logo is large on the showcase and shrinks into the corner for exploring.
+    onEnterInteractive(() => document.body.classList.add('is-exploring'));
 
     // Stage 3: routes appear when zoomed close or when their pin is selected.
     const routes = createRouteLayer(viewer, ellipsoid, await routeData);

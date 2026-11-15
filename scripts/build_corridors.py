@@ -250,7 +250,7 @@ def describe(m, cells):
     reasons.append(f'Daytime surface temperature along the way: mean {tmean:.0f} °C, coldest {tmin:.0f} °C.')
     if maxlat > 55:
         reasons.append(f'Reaches {maxlat:.0f}° latitude: long, cold polar winters.')
-    points = [[round(lon, 3), round(lat, 3)] for lon, lat in simplify(smooth(unwrapped), 0.04)]
+    points = [[round(lon, 3), round(lat, 3)] for lon, lat in simplify(smooth(unwrapped), 0.012)]
     return {
         'points': points, 'lengthKm': round(length), 'climbM': round(climb), 'descentM': round(descent),
         'slopeP90': round(p90, 1), 'slopeMax': round(float(slope.max()), 1),

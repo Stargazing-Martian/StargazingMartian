@@ -24,6 +24,72 @@ function loadPannellum() {
 const escape = text => String(text).replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
+// NASA's 360° mosaics are cylindrical strips: a full turn sideways, but
+// only ~50–100° tall. To look straight up and down, the strip is placed in a
+// full 2:1 equirectangular sphere and the rest is filled: sky above fading
+// from the strip's top edge colour, ground below from its bottom edge colour.
+// Gaps in the mosaic (pure black) show the fill too. The viewer says so.
+const spheres = new Map();
+function sphereFor(photo) {
+    if (!spheres.has(photo.id)) spheres.set(photo.id, buildSphere(photo));
+    return spheres.get(photo.id);
+}
+
+async function buildSphere(photo) {
+    const image = new Image();
+    image.src = photo.src;
+    await image.decode();
+    const width = image.naturalWidth;
+    const height = width / 2;
+    const stripHeight = Math.round(width * photo.vaov / 360);
+    const top = Math.round((height - stripHeight) / 2);
+
+    // Strip pixels, with mosaic gaps (near-black) made transparent.
+    const strip = document.createElement('canvas');
+    strip.width = width;
+    strip.height = stripHeight;
+    const stripContext = strip.getContext('2d', { willReadFrequently: true });
+    stripContext.drawImage(image, 0, 0, width, stripHeight);
+    const pixels = stripContext.getImageData(0, 0, width, stripHeight);
+    const data = pixels.data;
+    for (let i = 0; i < data.length; i += 4) {
+        if (data[i] + data[i + 1] + data[i + 2] < 18) data[i + 3] = 0;
+    }
+    stripContext.putImageData(pixels, 0, 0);
+
+    // Average colour of the visible pixels in a band of rows.
+    const bandColour = (from, to) => {
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let y = Math.max(0, from); y < Math.min(stripHeight, to); y++) {
+            for (let x = 0; x < width; x += 7) {
+                const i = (y * width + x) * 4;
+                if (data[i + 3]) { r += data[i]; g += data[i + 1]; b += data[i + 2]; n++; }
+            }
+        }
+        return n ? [r / n, g / n, b / n] : [120, 90, 70];
+    };
+    const band = Math.max(4, Math.round(stripHeight * 0.06));
+    const sky = bandColour(0, band);
+    const ground = bandColour(stripHeight - band, stripHeight);
+    const rgb = ([r, g, b], k = 1) => `rgb(${r * k | 0} ${g * k | 0} ${b * k | 0})`;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    const fill = context.createLinearGradient(0, 0, 0, height);
+    fill.addColorStop(0, rgb(sky, 0.8));                 // zenith
+    fill.addColorStop(top / height, rgb(sky));            // strip's top edge
+    fill.addColorStop((top + stripHeight) / height, rgb(ground));
+    fill.addColorStop(1, rgb(ground, 0.55));             // nadir
+    context.fillStyle = fill;
+    context.fillRect(0, 0, width, height);
+    context.drawImage(strip, 0, top);
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+    return URL.createObjectURL(blob);
+}
+
 export function createPhotoViewer() {
     const overlay = document.createElement('div');
     overlay.className = 'photo-viewer';
@@ -40,7 +106,7 @@ export function createPhotoViewer() {
                 </div>
                 <button class="photo-viewer__close" aria-label="Close photo">×</button>
             </div>
-            <p class="photo-viewer__hint">Drag to look around · Scroll to zoom</p>
+            <p class="photo-viewer__hint">Drag to look around · Scroll to zoom · Sky and ground beyond the photo are filled in</p>
         </div>`;
     document.body.appendChild(overlay);
     const stage = overlay.querySelector('.photo-viewer__stage');
@@ -77,17 +143,14 @@ export function createPhotoViewer() {
         const container = document.createElement('div');
         container.className = 'photo-viewer__pano';
         stage.appendChild(container);
+        const sphere = await sphereFor(photo);
+        if (current !== opened) return;
         viewer = pannellum.viewer(container, {
             type: 'equirectangular',
-            panorama: photo.src,
-            // NASA's 360° mosaics are cylindrical strips, not full spheres.
-            haov: photo.haov,
-            vaov: photo.vaov,
-            vOffset: 0,
-            // Keep the view centre on the strip. (avoidShowingBackground
-            // leaves these narrow strips black, so limit pitch instead.)
-            minPitch: -photo.vaov / 2,
-            maxPitch: photo.vaov / 2,
+            panorama: sphere,
+            // Full sphere: look all the way up and down.
+            haov: 360,
+            vaov: 180,
             autoLoad: true,
             autoRotate: -2,
             autoRotateInactivityDelay: 4000,

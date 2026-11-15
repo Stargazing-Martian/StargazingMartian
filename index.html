@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap">
-    <link rel="stylesheet" href="style.css?v=18">
+    <link rel="stylesheet" href="style.css?v=22">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
 </head>
 
@@ -23,9 +23,16 @@
 
         <div id="mars-globe"></div>
 
+        <a id="site-logo" href="./" aria-label="Stargazing — home">
+            <svg viewBox="0 0 400 400" aria-hidden="true">
+                <g transform="matrix(1,0,0,1,-14186.592124,-2649.613729)"><g transform="matrix(1,0,0,1,-25,0)"><g transform="matrix(0.829065,0,0,0.827818,6197.022657,1987.359603)">
+                    <path d="M9673.461,1097.435C9670.619,1082.625 9667,1057.234 9667,1041.599C9667,908.257 9775.257,800 9908.599,800C10035.594,800 10139.835,898.196 10149.471,1022.738C10135.533,966.435 10058.338,936.369 9947.906,939.591C10085.142,811.709 9753.845,834.218 9753.845,1005.091C9862.133,935.481 10148.68,926.705 10148.68,1068.812C10135.141,1189.364 10032.742,1283.198 9908.599,1283.198C9804.269,1283.198 9715.296,1216.925 9681.518,1124.216C9689.515,1089.919 9765.639,1048.042 9805.835,1040.525C9691.469,1225.096 9985.16,1274.465 10039.205,1102.804C10089.576,942.812 9769.927,978.246 9673.461,1097.435Z"/>
+                </g></g></g>
+            </svg>
+        </a>
         <header id="top-header">
 
-            <h1 id="site-title">STARGAZING</h1>
+            <h1 id="site-title" class="visually-hidden">Stargazing</h1>
 
             <nav id="top-nav">
 
@@ -159,7 +166,7 @@
         </fieldset>
     </aside>
     <p id="skybox-error" role="status" hidden>The star map could not be loaded. Reload the page to try again.</p>
-    <script type="module" src="app.js?v=40"></script>
+    <script type="module" src="app.js?v=43"></script>
 </body>
 
 </html>
